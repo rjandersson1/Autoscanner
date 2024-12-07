@@ -109,7 +109,6 @@ void Button::read() {
 			}
 		}
 	}
-	
 }
 
 

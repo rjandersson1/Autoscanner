@@ -69,7 +69,11 @@ public:
     // Prints current value
     void print();
 private:
-	int _buttonPin; // Pin connected to the button
+	// Callback function pointers
+    void (*onPressCallback)() = nullptr;
+    void (*onReleaseCallback)() = nullptr;
+    void (*onHoldCallback)() = nullptr;
+    void (*onDoubleClickCallback)() = nullptr;
 };
 
 
