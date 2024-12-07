@@ -1,0 +1,69 @@
+============== NEMA 17 WIRING =================
+Nema 17 wiring is as follows (from left to right)
+
+Pin#	Color	Desc		Dest (A4982)
+0		Rd		COIL A+		1A
+1		-		NC			-
+2		Gr		COIL B+		2A
+3		Bl		Coil A-		1B
+4		-		NC			-
+5		Bk		COIL B-		2B
+
+=================== A4982 =====================
+A4982 Wiring as follows
+
+
+
+DEST			LHS			DRIVER			RHS				DEST
+
+D2				ENABLE						VMOT			V_SUPPLY
+D3				MS1							GND				GND_SUPPLY
+D4				MS2							2B				BK
+D5				MS3							2A				GR
+D6				RESET						1A				RD
+D7				SLEEP						1B				BL
+D8				STEP						VDD				5V
+D9				DIR							GND				GND
+
+
+
+
++-----------------------------+
+|         A4982 Pinout        |
++-----------------------------+
+| DIR   | Direction Control   |
+| STEP  | Step Control Signal |
+| SLP   | Sleep Mode          |
+| RST   | Reset Driver        |
+| MS2   | Microstep Res. 2    |
+| MS1   | Microstep Res. 1    |
+| EN    | Enable Driver       |
+-------------------------------
+| 5V    | Logic Voltage (VDD) |
+| GND   | Logic Ground        |
+| VMOT  | Motor Voltage Input |
+| 1A    | Motor Coil 1+       |
+| 1B    | Motor Coil 1-       |
+| 2A    | Motor Coil 2+       |
+| 2B    | Motor Coil 2-       |
+| GND   | Motor Ground        |
++-----------------------------+
+
+
+
+=================== BUTTONS ================
+
+Button A:
+GND - D10
+
+BUTTON B:
+GND - D11
+
+BUTTON C:
+GND - D12
+
+POTI:
+GND
+A0
+VCC
+
