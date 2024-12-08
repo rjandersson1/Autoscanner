@@ -33,16 +33,16 @@ public:
 	unsigned long pressedTime = 0;		// timestamp when pressed
 	unsigned long releasedTime = 0;		// timestamp when released
 	unsigned long changedTime = 0;		// timetsamp when state changed
-	// unsigned long doubleClickTime = 0;
 	unsigned long lastPressedTime = 0;	// timestamp when last pressed
 	unsigned long lastReleasedTime = 0;	// timestamp when last released
 	unsigned long lastChangedTime = 0;	// timestamp when last state changed
+	unsigned long firstClickTime = 0;
 	unsigned long lastClickTime = 0;
 	
 	// Timing variables [ms]
-	unsigned long holdTime = 1000;			// hold time
-	unsigned long debounceDelay = 250; 	// debounce timer
-	unsigned long multiClickDelay = 500;
+	unsigned long holdTime = 2000;			// hold time
+	unsigned long debounceDelay = 50; 	// debounce timer
+	unsigned long multiClickDelay = 250;
 	unsigned long inactivityTimeout = 10000; // Reset states after 10s of inactivity
 	
 	// Boolean Properties
@@ -53,6 +53,7 @@ public:
 	bool isDoubleClick = 0;
 	bool isDoubleClickHold = 0;
 	bool isTripleClick = 0;
+	bool isTripleClickHold = 0;
 
 
 	// Setup functions
@@ -64,31 +65,40 @@ public:
 	void getState();
 
 	// Callback functions
-	void onPress(void (*callback()));
-	void onRelease(void (*callback()));
-	void onHold(void (*callback()));
-	void onSingleClick(void (*callback()));
-	void onDoubleClick(void (*callback()));
-	void onTripleClick(void (*callback()));
+	void onPress(void (*callback)());
+	void onRelease(void (*callback)());
+	void onHold(void (*callback)());
+	void onSingleClick(void (*callback)());
+	void onDoubleClick(void (*callback)());
+	void onTripleClick(void (*callback)());
 
 
 	// Methods
 	void read();
-	void processChange(int reading);
-	void checkPress();
-	void checkRelease();
-	void checkHold();
+	void processChangeEvent(int reading);
+	void processPressEvent();
+	void processReleaseEvent();
+	void processHoldEvent();
+	void processClickSequence();
 	void checkInactivity();
+	void resetButtonState();
 
 	// Prints current value
 	void print();
 private:
 
-	// Private callbacks
+	// Event callbacks
 	void (*onPressCallback)() = nullptr;
 	void (*onReleaseCallback)() = nullptr;
 	void (*onHoldCallback)() = nullptr;
+
+	// Click callbacks
+	void (*onSingleClickCallback)() = nullptr;
+	void (*onSingleClickHoldCallback)() = nullptr;
 	void (*onDoubleClickCallback)() = nullptr;
+	void (*onDoubleClickHoldCallback)() = nullptr;
+	void (*onTripleClickCallback)() = nullptr;
+	void (*onTripleClickHoldCallback)() = nullptr;
 };
 
 

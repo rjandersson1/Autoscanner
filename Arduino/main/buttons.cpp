@@ -36,94 +36,125 @@ void Button::setup(int pin) {
 	pinMode(pin, INPUT_PULLUP);
 }
 
+// Checks if button was pressed
+void Button::processPressEvent() {
+	isPressed = 1;
+	lastPressedTime = pressedTime;
+	pressedTime = currentTime;
+	
+	if (onPressCallback) onPressCallback();
+
+	// Record timestamp first click in sequence 
+	if (clickCount == 0) firstClickTime = currentTime;
+
+	// Increase click count if multiclick observed
+	if (currentTime - lastPressedTime < multiClickDelay) {
+		clickCount++;
+	}
+	// If no multiclick, set click count to 1.
+	else {
+		clickCount = 1;
+	}
+
+	lastClickTime = currentTime;
+}
+
 // Processes a change in state
-void Button::processChange(int reading) {
+void Button::processChangeEvent(int reading) {
 	lastState = currentState;
 	currentState = reading;
 	lastChangedTime = changedTime;
 	changedTime = currentTime;
 
-	if (currentState == LOW) checkPress(currentTime);
-	else checkRelease(currentTime);
+	if (currentState == LOW) processPressEvent();
+	else processReleaseEvent();
 
 }
 
-// Checks if button was pressed
-void Button::checkPress() {
-	isPressed = 1;
-	lastPressedTime = pressedTime;
-	pressedTime = currentTime;
-
-	if (onPressCallback) onPressCallback();
-
-	// Increment click count for multi click check
-	if (currentTime - lastClickTime < multiClickDelay) {
-		clickCount++;
-	} else {
-		// Reset counter
-		clickCount = 1;
-	}
-	lastClickTime = currentTime;
-}
-
-// Checks if button was released
-void Button::checkRelease() {
+// Processes button release event
+void Button::processReleaseEvent() {
 	isPressed = 0;
 	lastReleasedTime = releasedTime;
 	releasedTime = currentTime;
 
 	if (onReleaseCallback) onReleaseCallback();
 
-	// Check if multi click delay has passed to parse multi clicks
+	// Reset hold flags
+	isHeld = 0;
+	isSingleClickHold = 0;
+	isDoubleClickHold = 0;
+	isTripleClickHold = 0;
+
+	// Check if multiclick
+	processClickSequence();
+}
+
+// Processes multiclicks if time between clicks is more than multiclick delay.
+void Button::processClickSequence() {
 	if (currentTime - lastClickTime >= multiClickDelay) {
 		if (clickCount == 1) {
-			// Single click
 			isSingleClick = 1;
 			isDoubleClick = 0;
 			isTripleClick = 0;
 
-			// Run single click function
+			// Trigger single-click callback
 			if (onSingleClickCallback) onSingleClickCallback();
-		} else if (clickCount == 2) {
-			if (currentState == LOW && currentTime - pressedTime > holdTime) {
-				isDoubleClickHold = 1;
-				if (onDoubleClickHoldCallback) onDoubleClickHoldCallback();
-			} else {
-				// Double CLick
-				isSingleClick = 0;
-				isDoubleClick = 1;
-				isTripleClick = 0;
+		} 
+		else if (clickCount == 2) {
+			isSingleClick = 0;
+			isDoubleClick = 1;
+			isTripleClick = 0;
 
-				// Run doubleclick function
-				if (onDoubleClickCallback) onDoubleClickCallback();
-			}
-		} else if (clickCount == 3) {
-			// Triple click
+			// Trigger double-click callback
+			if (onDoubleClickCallback) onDoubleClickCallback();
+		} 
+		else if (clickCount == 3) {
 			isSingleClick = 0;
 			isDoubleClick = 0;
 			isTripleClick = 1;
 
-			// Run triple click function
+			// Trigger triple-click callback
 			if (onTripleClickCallback) onTripleClickCallback();
+		}
+
+		// Reset click count after processing
+		clickCount = 0;
+		firstClickTime = 0;
+	}
+}
+
+// Checks if button is held for hold time and processes cases
+void Button::processHoldEvent() {
+	// Ensure the button is in the pressed state and the hold time has passed
+	if (currentState == LOW && currentTime - pressedTime > holdTime) {
+		isHeld = 1; // Mark the button as held
+		if (onHoldCallback) onHoldCallback(); // Trigger generic hold callback if defined
+
+		// Check click count and determine the hold type
+		if (clickCount == 1 && !isSingleClickHold) {
+			isSingleClickHold = 1; // Single click hold detected
+			if (onSingleClickHoldCallback) onSingleClickHoldCallback(); // Trigger single-click hold callback
+		} 
+		else if (clickCount == 2 && !isDoubleClickHold) {
+			isDoubleClickHold = 1; // Double click hold detected
+			if (onDoubleClickHoldCallback) onDoubleClickHoldCallback(); // Trigger double-click hold callback
+		} 
+		else if (clickCount == 3 && !isTripleClickHold) {
+			isTripleClickHold = 1; // Triple click hold detected
+			if (onTripleClickHoldCallback) onTripleClickHoldCallback(); // Trigger triple-click hold callback
 		}
 	}
 }
 
-// Checks if button was held
-void Button::checkHold() {
-	if (currentState == LOW && currentTime - pressedTime > holdTime && !isHeld) {
-		isHeld = 1;
-		if (onHoldCallback) onHoldCallback();
-	}
-}
-
 // Reset button states if inactive
-void Button:resetButtonState() {
-	isPressed = 0;
-	isHeld = 0;
-	isDoubleClick = 0;
-	isTripleClick = 0;
+void Button::resetButtonState() {
 	clickCount = 0;
+	isSingleClick = 0;
+	isSingleClickHold = 0;
+	isDoubleClick = 0;
+	isDoubleClickHold = 0;
+	isTripleClick = 0;
+	isTripleClickHold = 0;
 }
 
 // Reads and updates button states
@@ -136,12 +167,12 @@ void Button::read() {
 
 	// If state has changed and previous changed time less than debounce update properties
 	if (reading != currentState && currentTime - changedTime > debounceDelay) {
-		processChange(reading, currentTime);
+		processChangeEvent(reading);
 	} 
-	
 	// If reading unchanged, check for hold state
 	else if (reading == currentState) {
-		checkHold(currentTime);
+		processClickSequence();
+		processHoldEvent();
 
 		// Reset button state if inactive
 		if (currentTime - lastChangedTime > inactivityTimeout) {
@@ -150,12 +181,10 @@ void Button::read() {
 	}
 }
 
-
 // Print states (debugging)
 void Button::print() {
     Serial.println(digitalRead(pin));
 }
-
 
 // Callback function definition
 void Button::onPress(void (*callback)()) {
@@ -170,9 +199,18 @@ void Button::onHold(void (*callback)()) {
     onHoldCallback = callback; // Store the user-defined function pointer
 }
 
+void Button::onSingleClick(void (*callback)()) {
+    onSingleClickCallback = callback; // Store the user-defined function pointer
+}
+
 void Button::onDoubleClick(void (*callback)()) {
     onDoubleClickCallback = callback; // Store the user-defined function pointer
 }
+
+void Button::onTripleClick(void (*callback)()) {
+    onTripleClickCallback = callback; // Store the user-defined function pointer
+}
+
 
 
 
