@@ -26,8 +26,10 @@ public:
 	int pin;
 	int currentState = 1;
 	int lastState = 1;
+	unsigned long clickCount = 0;
 
 	// Timestamp variables [ms]
+	unsigned long currentTime = 0;
 	unsigned long pressedTime = 0;		// timestamp when pressed
 	unsigned long releasedTime = 0;		// timestamp when released
 	unsigned long changedTime = 0;		// timetsamp when state changed
@@ -35,17 +37,22 @@ public:
 	unsigned long lastPressedTime = 0;	// timestamp when last pressed
 	unsigned long lastReleasedTime = 0;	// timestamp when last released
 	unsigned long lastChangedTime = 0;	// timestamp when last state changed
-	// unsigned long lastDoubleClickTime = 0;
+	unsigned long lastClickTime = 0;
 	
 	// Timing variables [ms]
 	unsigned long holdTime = 1000;			// hold time
 	unsigned long debounceDelay = 250; 	// debounce timer
-	unsigned long doubleClickDelay = 300;
+	unsigned long multiClickDelay = 500;
+	unsigned long inactivityTimeout = 10000; // Reset states after 10s of inactivity
 	
 	// Boolean Properties
 	bool isPressed = 0;	
 	bool isHeld = 0;
+	bool isSingleClick = 0;
+	bool isSingleClickHold = 0;
 	bool isDoubleClick = 0;
+	bool isDoubleClickHold = 0;
+	bool isTripleClick = 0;
 
 
 	// Setup functions
@@ -60,16 +67,28 @@ public:
 	void onPress(void (*callback()));
 	void onRelease(void (*callback()));
 	void onHold(void (*callback()));
+	void onSingleClick(void (*callback()));
 	void onDoubleClick(void (*callback()));
+	void onTripleClick(void (*callback()));
 
 
 	// Methods
 	void read();
+	void processChange(int reading);
+	void checkPress();
+	void checkRelease();
+	void checkHold();
+	void checkInactivity();
 
-    // Prints current value
-    void print();
+	// Prints current value
+	void print();
 private:
-	int _buttonPin; // Pin connected to the button
+
+	// Private callbacks
+	void (*onPressCallback)() = nullptr;
+	void (*onReleaseCallback)() = nullptr;
+	void (*onHoldCallback)() = nullptr;
+	void (*onDoubleClickCallback)() = nullptr;
 };
 
 

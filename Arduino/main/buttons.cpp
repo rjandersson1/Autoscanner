@@ -31,88 +31,127 @@ Button::Button(int pin)
 	setup(pin);
 }
 
+// Setup button
 void Button::setup(int pin) {
 	pinMode(pin, INPUT_PULLUP);
 }
 
+// Processes a change in state
+void Button::processChange(int reading) {
+	lastState = currentState;
+	currentState = reading;
+	lastChangedTime = changedTime;
+	changedTime = currentTime;
+
+	if (currentState == LOW) checkPress(currentTime);
+	else checkRelease(currentTime);
+
+}
+
+// Checks if button was pressed
+void Button::checkPress() {
+	isPressed = 1;
+	lastPressedTime = pressedTime;
+	pressedTime = currentTime;
+
+	if (onPressCallback) onPressCallback();
+
+	// Increment click count for multi click check
+	if (currentTime - lastClickTime < multiClickDelay) {
+		clickCount++;
+	} else {
+		// Reset counter
+		clickCount = 1;
+	}
+	lastClickTime = currentTime;
+}
+
+// Checks if button was released
+void Button::checkRelease() {
+	isPressed = 0;
+	lastReleasedTime = releasedTime;
+	releasedTime = currentTime;
+
+	if (onReleaseCallback) onReleaseCallback();
+
+	// Check if multi click delay has passed to parse multi clicks
+	if (currentTime - lastClickTime >= multiClickDelay) {
+		if (clickCount == 1) {
+			// Single click
+			isSingleClick = 1;
+			isDoubleClick = 0;
+			isTripleClick = 0;
+
+			// Run single click function
+			if (onSingleClickCallback) onSingleClickCallback();
+		} else if (clickCount == 2) {
+			if (currentState == LOW && currentTime - pressedTime > holdTime) {
+				isDoubleClickHold = 1;
+				if (onDoubleClickHoldCallback) onDoubleClickHoldCallback();
+			} else {
+				// Double CLick
+				isSingleClick = 0;
+				isDoubleClick = 1;
+				isTripleClick = 0;
+
+				// Run doubleclick function
+				if (onDoubleClickCallback) onDoubleClickCallback();
+			}
+		} else if (clickCount == 3) {
+			// Triple click
+			isSingleClick = 0;
+			isDoubleClick = 0;
+			isTripleClick = 1;
+
+			// Run triple click function
+			if (onTripleClickCallback) onTripleClickCallback();
+		}
+	}
+}
+
+// Checks if button was held
+void Button::checkHold() {
+	if (currentState == LOW && currentTime - pressedTime > holdTime && !isHeld) {
+		isHeld = 1;
+		if (onHoldCallback) onHoldCallback();
+	}
+}
+
+// Reset button states if inactive
+void Button:resetButtonState() {
+	isPressed = 0;
+	isHeld = 0;
+	isDoubleClick = 0;
+	isTripleClick = 0;
+	clickCount = 0;
+}
+
+// Reads and updates button states
 void Button::read() {
 	// Read current state
 	int reading = digitalRead(pin);
 
 	// Get timestamp
-	unsigned long currentTime = millis();
+	currentTime = millis();
 
 	// If state has changed and previous changed time less than debounce update properties
 	if (reading != currentState && currentTime - changedTime > debounceDelay) {
-		// Update timestamps
-		lastChangedTime = changedTime;
-		changedTime = currentTime;
-
-		// Update states
-		lastState = currentState;
-		currentState = reading;
-		isHeld = 0;
-
-		// Check if was released
-		if (currentState == HIGH) {
-			isPressed = 0;
-
-			// Update release times
-			lastReleasedTime = releasedTime;
-			releasedTime = currentTime;
-
-			// Do defined function
-			if (onReleaseCallback) onReleaseCallback();
-		}
-
-		// Check if was pressed
-		if (currentState == LOW) {
-			isPressed = 1;
-
-			// Update pressed times
-			lastPressedTime = pressedTime;
-			pressedTime = currentTime;
-			
-			// Do defined function
-			if (onPressCallback) onPressCallback();
-		}
-
-		// Check for double click
-		if (pressedTime - lastPressedTime < doubleClickDelay) {
-			isDoubleClick = 1;
-
-			// Do defined function
-			if (onDoubleClickCallback) onDoubleClickCallback();
-		} else {
-			isDoubleClick = 0;
-		}	
+		processChange(reading, currentTime);
 	} 
 	
 	// If reading unchanged, check for hold state
 	else if (reading == currentState) {
-		// Button not pressed (realistically this will never be true)
-		// if (reading == HIGH && isPressed) {
-		// 	isPressed = 0;
-		// 	isHeld = 0;
-		// } 
+		checkHold(currentTime);
 
-		// Button still pressed
-		if (reading == LOW) {
-			// isPressed = 1;
-			if (currentTime - pressedTime > holdTime) {
-				if (!isHeld) {
-					isHeld = 1;
-					
-					// Do defined function
-					if (onPressCallback) onPressCallback();
-				}
-			}
+		// Reset button state if inactive
+		if (currentTime - lastChangedTime > inactivityTimeout) {
+			resetButtonState();
 		}
 	}
-	
 }
 
 
+// Print states (debugging)
 void Button::print() {
     Serial.println(digitalRead(pin));
 }
