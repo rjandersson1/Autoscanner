@@ -24,12 +24,13 @@
 // #include "A4988.h"
 // #include "stepper.h"
 #include "buttons.h"
+#include "IRControl.h"
 
 // ======================== Pindef ============================= //
-#define PIN_A 10   // Button A Signal Pin
-#define PIN_B 11   // Button B Signal Pin
-#define PIN_C 12   // Button C Signal Pin
-#define PIN_POTI A0 // Potentiometer Signal Pin
+#define PIN_A 2   // Button A Signal Pin
+#define PIN_B 3   // Button B Signal Pin
+// #define PIN_C 12   // Button C Signal Pin
+// #define PIN_POTI A0 // Potentiometer Signal Pin
 
 // #define STP_EN 2
 // #define STP_MS1 3
@@ -45,9 +46,9 @@
 // Stepper motor(STP_STP, STP_DIR, STP_EN, STP_MS1, STP_MS2, STP_MS3, STP_RST, STP_SLP, 200); // stepPin, dirPin, enablePin, ms1Pin, ms2Pin, ms3Pin, reset pin, sleep pin, stepsPerRevolution
 
 
-// ====================== Button Objects ======================== //
-// Poti poti;
-Button buttonA(PIN_A), buttonB(PIN_B), buttonC(PIN_C);
+// ====================== Objects ======================== //
+Button buttonA(PIN_A), buttonB(PIN_B);
+IRControl A7R(9, 40000);
 
 
 // ======================== Main ============================= //
@@ -59,17 +60,22 @@ void setup() {
 
 }
 
-int microstepMode = 1;
+utint32_t command = 0;
 void loop() {
 
   buttonA.read();
+  buttonB.read();
+
+  if (Serial.available()) {
+	command = A7R.readHexFromSerial();
+  }
+
 	// delay(20);
 }
 
 void setupButtons() {	
 	// Set up buttons
-	buttonA.setup(PIN_A);
-
+	buttonA.onSingleClick
 	buttonA.onPress(printPress);
 	buttonA.onRelease(printRelease);
 	buttonA.onHold(printHold);

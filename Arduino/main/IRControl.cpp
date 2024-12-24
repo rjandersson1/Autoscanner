@@ -107,12 +107,7 @@ void IRControl::sendCommand(uint32_t CMD) {
 }
 
 uint32_t IRControl::readHexFromSerial() {
-    Serial.print("Input HEX command: ");
-    // Wait until input is available
-    while (!Serial.available()) {
-        // Do nothing until data is available
-    }
-
+    Serial.println("Processing hex command...");
     // Read the input as a string
     String input = Serial.readStringUntil('\n'); // Read until a newline character
 
@@ -125,4 +120,5 @@ uint32_t IRControl::readHexFromSerial() {
     char inputBuffer[input.length() + 1];
     input.toCharArray(inputBuffer, input.length() + 1);
     return strtoul(inputBuffer, NULL, 16); // Convert string to uint32_t (base 16)
+    Serial.println("Done!");
 }
