@@ -1,0 +1,93 @@
+{
+    "version": 1,
+    "author": "Anonymous maker",
+    "editor": "wokwi",
+    "parts": [
+      { "type": "wokwi-arduino-uno", "id": "uno", "top": 567, "left": -19.8, "attrs": {} },
+      { "type": "wokwi-led", "id": "led1", "top": 92.4, "left": -361, "attrs": { "color": "red" } },
+      {
+        "type": "wokwi-pushbutton",
+        "id": "btn1",
+        "top": 92.6,
+        "left": -220.8,
+        "rotate": 90,
+        "attrs": { "color": "green" }
+      },
+      {
+        "type": "wokwi-pushbutton-6mm",
+        "id": "btn2",
+        "top": 103.4,
+        "left": -153.6,
+        "rotate": 90,
+        "attrs": { "color": "green" }
+      },
+      {
+        "type": "wokwi-pushbutton-6mm",
+        "id": "btn3",
+        "top": 103.4,
+        "left": -115.2,
+        "rotate": 90,
+        "attrs": { "color": "green" }
+      },
+      { "type": "wokwi-potentiometer", "id": "pot1", "top": 75.5, "left": -297.8, "attrs": {} },
+      { "type": "wokwi-vcc", "id": "vcc1", "top": -152.84, "left": 240, "attrs": {} },
+      { "type": "wokwi-gnd", "id": "gnd1", "top": -124.8, "left": 268.2, "attrs": {} },
+      { "type": "wokwi-a4988", "id": "drv1", "top": -72, "left": 129.6, "attrs": {} },
+      {
+        "type": "wokwi-stepper-motor",
+        "id": "stepper1",
+        "top": -236.39,
+        "left": 432.43,
+        "attrs": { "size": "17" }
+      },
+      {
+        "type": "wokwi-resistor",
+        "id": "r1",
+        "top": 216,
+        "left": -365.35,
+        "rotate": 90,
+        "attrs": { "value": "330" }
+      },
+      {
+        "type": "wokwi-resistor",
+        "id": "r2",
+        "top": -91.2,
+        "left": 201.05,
+        "rotate": 90,
+        "attrs": { "value": "220" }
+      }
+    ],
+    "connections": [
+      [ "stepper1:A+", "drv1:2A", "blue", [ "v0" ] ],
+      [ "stepper1:A-", "drv1:1A", "red", [ "v0" ] ],
+      [ "stepper1:B+", "drv1:2B", "black", [ "v0" ] ],
+      [ "stepper1:B-", "drv1:1B", "green", [ "v0" ] ],
+      [ "uno:5V", "drv1:VDD", "red", [ "v28.7", "h503", "v-796.88" ] ],
+      [ "drv1:GND.1", "uno:GND.2", "black", [ "h441.75", "v777.68", "h-474.3" ] ],
+      [ "drv1:ENABLE", "uno:2", "green", [ "h-134.4", "v355.2", "h322.3" ] ],
+      [ "drv1:MS1", "uno:3", "green", [ "h-124.8", "v355.2", "h197.6" ] ],
+      [ "drv1:MS2", "uno:4", "green", [ "h-115.2", "v355.2", "h178.5" ] ],
+      [ "drv1:MS3", "uno:5", "green", [ "h-105.6", "v355.2", "h159.4" ] ],
+      [ "drv1:RESET", "uno:6", "green", [ "h-96", "v355.2", "h140.3" ] ],
+      [ "drv1:SLEEP", "uno:7", "green", [ "h-86.4", "v355.2", "h121.2" ] ],
+      [ "drv1:STEP", "uno:8", "green", [ "h-76.8", "v355.2", "h95.6" ] ],
+      [ "drv1:DIR", "uno:9", "green", [ "h-67.2", "v355.2", "h76" ] ],
+      [ "drv1:GND.1", "led1:C", "black", [ "h9.75", "v182.48", "h-538" ] ],
+      [ "pot1:GND", "led1:C", "black", [ "v38.4", "h-76.8" ] ],
+      [ "btn1:2.r", "pot1:GND", "black", [ "v32.3", "h-73.5" ] ],
+      [ "btn2:2.r", "btn1:2.r", "black", [ "v52", "h-6" ] ],
+      [ "btn3:2.r", "pot1:GND", "black", [ "v52", "h-6" ] ],
+      [ "led1:A", "r1:1", "red", [ "v0" ] ],
+      [ "drv1:VDD", "pot1:VCC", "red", [ "h19.35", "v201.68", "h-450.4" ] ],
+      [ "pot1:SIG", "uno:A0", "gold", [ "v652.8", "h447" ] ],
+      [ "btn3:1.r", "uno:10", "green", [ "v244", "h224.8" ] ],
+      [ "btn2:1.r", "uno:11", "green", [ "v253.6", "h253.6", "v192" ] ],
+      [ "btn1:1.r", "uno:12", "green", [ "v243.5", "h291.5" ] ],
+      [ "uno:13", "r1:2", "green", [ "v-172.8", "h-9.2" ] ],
+      [ "drv1:GND.2", "r2:2", "black", [ "h0" ] ],
+      [ "r2:2", "gnd1:GND", "black", [ "h28.8", "v-68.4" ] ],
+      [ "drv1:VMOT", "r2:1", "red", [ "h28.95", "v-47.92" ] ],
+      [ "r2:1", "vcc1:VCC", "red", [ "h0" ] ]
+    ],
+    "dependencies": {}
+  }
