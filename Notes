@@ -9,6 +9,21 @@ Pin#	Color	Desc		Dest (A4982)
 4		-		NC			-
 5		Bk		COIL B-		2B
 
+
+42BYGH40-A-24DH
+NO.240427
+
+
+Motor Specifications:
+Frame Size: 42 mm x 42 mm (NEMA 17 standard)
+Step Angle: 1.8° per step (200 steps per revolution)
+Motor Length: 40 mm
+Rated Voltage: 24V
+Current per Phase: 0.5A
+Phase Resistance: 48Ω
+Holding Torque: Approximately 22 N·cm
+Lead Wires: 4 (indicating a bipolar configuration)
+
 =================== A4982 =====================
 A4982 Wiring as follows
 
@@ -48,6 +63,13 @@ D9				DIR							GND				GND
 | 2B    | Motor Coil 2-       |
 | GND   | Motor Ground        |
 +-----------------------------+
+
+VSS
+GND
+1A (1+) (orange)    red
+1B (1-) (white)     blue    
+2A (2+) (blue)      gr
+2B (2-) (green)     black
 
 
 
