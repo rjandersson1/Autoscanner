@@ -85,6 +85,10 @@ Button::Button(int pin)
 // Setup button
 void Button::setup(int pin) {
 	pinMode(pin, INPUT_PULLUP);
+
+	// If multiclick is not defined, set multiClickDelay to zero for fastest response
+	bool isMulticlick = (onDoubleClickCallback || onDoubleClickHoldCallback || onTripleClickCallback || onTripleClickHoldCallback); // check if any of the multiclick callbacks are defined 
+	if (!isMulticlick) multiClickDelay = 0; // set delay to zero
 }
 
 // Checks if button was pressed
