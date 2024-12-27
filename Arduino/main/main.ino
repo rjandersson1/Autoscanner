@@ -26,31 +26,31 @@
 #include "buttons.h"
 
 // ======================== Pindef ============================= //
-#define PIN_A 10   // Button A Signal Pin
-#define PIN_B 11   // Button B Signal Pin
-#define PIN_C 12   // Button C Signal Pin
-#define PIN_POTI A0 // Potentiometer Signal Pin
 
-#define STP_EN 2
-#define STP_MS1 3
-#define STP_MS2 4
-#define STP_MS3 5
-#define STP_RST 6
-#define STP_SLP 7
-#define STP_STP 8
-#define STP_DIR 9
+#define PIN_MS1  13  // YL -> MS1
+#define PIN_EN   12  // GR -> EN
+#define PIN_DIR  11  // OR -> DIR
+#define PIN_STEP 10  // RD -> STEP
+#define PIN_IR   9   // BR -> IR LED
+#define PIN_SLP  8   // BR -> SLP
+#define PIN_RST  7   // BK -> RST
+#define PIN_MS3  6   // WH -> MS3
+#define PIN_MS2  5   // GY -> MS2
+#define PIN_BTN_A 4  // GY -> BUTTON A
+#define PIN_BTN_B 3  // WH -> BUTTON B
+#define PIN_BTN_C 2  // BK -> BUTTON C
+#define PIN_POTI A0  // RD -> POTI
 
+// ====================== Object Definition ======================== //
 
-// ====================== Motor Object ========================== //
-Stepper motor(STP_STP, STP_DIR, STP_EN, STP_MS1, STP_MS2, STP_MS3, STP_RST, STP_SLP, 200); // stepPin, dirPin, enablePin, ms1Pin, ms2Pin, ms3Pin, reset pin, sleep pin, stepsPerRevolution
-
-
-// ====================== Button Objects ======================== //
-// Poti poti;
-Button buttonA(PIN_A);
-toggleButton buttonB(PIN_B);
-toggleButton buttonC(PIN_C);
+// Utility
+Button buttonA(PIN_BTN_A);
+Button buttonB(PIN_BTN_B);
+toggleButton buttonC(PIN_BTN_C);
 Poti poti(PIN_POTI, 0, 1023);
+
+// Stepper
+Stepper motor(PIN_STEP, PIN_DIR, PIN_EN, PIN_MS1, PIN_MS2, PIN_MS3, PIN_RST, PIN_SLP, 200); // 200 steps per revolution
 
 
 // ======================== Main ============================= //

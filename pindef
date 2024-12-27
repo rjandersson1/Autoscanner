@@ -1,0 +1,35 @@
+========== Pin Definition 27.12.2024 Flims ==========
+
+[pin#, col, func]
+13  YL  --> MS1
+12  GR  --> EN
+11  OR  --> DIR
+10  RD  --> STEP
+09  BR  --> IR LED
+08  BR  --> SLP
+07  BK  --> RST
+06  WH  --> MS3
+05  GY  --> MS2
+04  GY  --> BUTTON A
+03  WH  --> BUTTON B
+02  BK  --> BUTTON C
+A0  RD  --> POTI
+GND BR  --> GND
+5V  RD  --> 5V
+
+
+Arduino codeblock:
+// Pin Definitions
+#define PIN_MS1  13  // YL -> MS1
+#define PIN_EN   12  // GR -> EN
+#define PIN_DIR  11  // OR -> DIR
+#define PIN_STEP 10  // RD -> STEP
+#define PIN_IR   9   // BR -> IR LED
+#define PIN_SLP  8   // BR -> SLP
+#define PIN_RST  7   // BK -> RST
+#define PIN_MS3  6   // WH -> MS3
+#define PIN_MS2  5   // GY -> MS2
+#define PIN_BTN_A 4  // GY -> BUTTON A
+#define PIN_BTN_B 3  // WH -> BUTTON B
+#define PIN_BTN_C 2  // BK -> BUTTON C
+#define PIN_POTI A0  // RD -> POTI
