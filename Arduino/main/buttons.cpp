@@ -1,25 +1,76 @@
 #include "buttons.h"
 #include <Arduino.h>
 
+// Constructor
+Poti::Poti(int pin, int min_value = 0, int max_value = 1023) 
+	: pin(pin),
+	min_value(min_value),
+	max_value(max_value)
+{
+	setup();
+}
+
+float Poti::mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
+	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
 // Poti Class Implementation
-void Poti::setupPoti(int pin) {
-	_potiPin = pin;
-	// No need to configure analog pins explicitly
+void Poti::setup() {
+	// nothing to do
 }
 
-int Poti::getValue() {
-	return analogRead(_potiPin);
+// Reads current value
+void Poti::read() {
+	currentValue = analogRead(pin);
+	if (currentValue > max_value) currentValue = max_value;
+	if (currentValue < min_value) currentValue = min_value;
 }
 
-void Poti::print() {
-    Serial.println(this->getValue());
+// Returns analog value
+int Poti::getAnalog() {
+	return currentValue;
 }
 
-void Poti::printPct() {
-    int val = this->getValue();
-    float pct = map(val, 0, 1023, 0, 100);
-    Serial.println(pct);
+// Returns mapped percent [0.0, 100.0]
+float Poti::getPercent() {
+	float percent = mapFloat(currentValue, min_value, max_value, 0.0, 100.0);
+	return percent;
 }
+
+// Returns mapped float [0.0, 1.0]
+float Poti::getFloat() {
+	float value = mapFloat(currentValue, min_value, max_value, 0.0, 1.0);
+	return value;
+}
+
+// Returns custom mapping
+float Poti::getMap() {
+	float value = mapFloat(currentValue, min_value, max_value, mapMin, mapMax);
+	return value;
+}
+
+// Returns degrees [0.0, 360.0]
+float Poti::getDegrees() {
+	float value = mapFloat(currentValue, min_value, max_value, 0.0, 360.0);
+	return value;
+}
+
+// Sets custom mapping
+void Poti::setMap(float inputMin, float inputMax) {
+	mapMin = inputMin;
+	mapMax = inputMax;
+}
+
+// Set thresholds for custom trigger events
+void Poti::setThresholds(float thresholdMinFloat, float thresholdMaxFloat) {
+	thresholdMin = map(thresholdMinFloat, 0.0, 1.0, 0, 1023);
+	thresholdMax = map(thresholdMaxFloat, 0.0, 1.0, 0, 1023);
+}
+
+//
+
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Button Class Implementation
@@ -211,7 +262,63 @@ void Button::onTripleClick(void (*callback)()) {
     onTripleClickCallback = callback; // Store the user-defined function pointer
 }
 
+void Button::enableMultiClick(bool enabled) {
+	if (enabled) {
+		multiClickDelay = 250;
+	}
+
+	if (!enabled) {
+		multiClickDelay = 0;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//Constructor
+toggleButton::toggleButton(int pin) 
+	: pin(pin)
+{
+	setup(pin);
+}
 
 
+void toggleButton::setup(int pin) {
+	pinMode(pin, INPUT_PULLUP);
+}
 
+void toggleButton::read() {
+	int reading = digitalRead(pin);
 
+	currentTime = millis();
+	
+	// Toggle button if pressed and debounce delay has passed
+	if (!reading && currentTime - lastToggle > debounceDelay) {
+		state = !state;
+		lastToggle = currentTime;
+		if (onToggleCallback) onToggleCallback();
+
+		if (state && toggledOnCallback) toggledOnCallback();
+		if (!state && toggledOffCallback) toggledOffCallback();
+	}
+
+	if (state && whileOnCallback) whileOnCallback();
+	if (state && whileOffCallback) whileOffCallback();
+}
+
+// Callback for when button is toggled
+void toggleButton::onToggle(void (*callback())) {
+	onToggleCallback = callback;
+}
+
+// Callback for when button is toggled ON
+void toggleButton::whileOn(void (*callback())) {
+	whileOnCallback = callback;
+}
+
+void toggleButton::toggledOn(void (*callback())) {
+	toggledOnCallback = callback;
+}
+
+void toggleButton::toggledOff(void (*callback())) {
+	toggledOffCallback = callback;
+}
