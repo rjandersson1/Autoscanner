@@ -74,7 +74,8 @@ class Stepper {
 public:
     // Constructor  declaration (stepPin, dirPin, enablePin, stepsPerRevolution)
     Stepper(int stepPin, int dirPin, int enablePin, int ms1Pin, int ms2Pin, int ms3Pin, int resetPin, int sleepPin, int fullStepsPerRevolution);
-    
+    void setup();
+
     int stepsPerRevolution; // Steps for a full motor revolution
     int microstepMode;      // Microstepping mode (1, 2, 4, 8, etc.)
     int stepDelay;
@@ -84,6 +85,7 @@ public:
     
     // Microstepping
     void setMicrostepMode(int mode);
+    void cycleMicrostepMode();
 
     // Motor control
     void enableMotor();
@@ -91,6 +93,7 @@ public:
     void setDirection();
     void resetMotor();
     void sleepMotor();
+    void swapDirection();
 
     // Movement
     void moveStep();
@@ -111,7 +114,6 @@ public:
 
     // Debugging
     void printStatus();
-private:
 
     // Motor control pins
     int stepPin;     // Pin connected to the step signal
@@ -137,7 +139,7 @@ private:
     float velocity;
     float acceleration;
 
-
+private:
 };
 
 

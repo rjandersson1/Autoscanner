@@ -16,11 +16,14 @@ Stepper::Stepper(int stepPin, int dirPin, int enablePin, int ms1Pin, int ms2Pin,
       sleepPin(sleepPin),
       fullStepsPerRevolution(stepsPerRevolution),
       microstepMode(1),
-      stepsPerRevolution(fullStepsPerRevolution * microstepMode),
       isEnabled(false),
       direction(1),
-      currentStep(0),
-      stepAngle(360.0f / stepsPerRevolution) {
+      currentStep(0)
+{
+    setup();
+}
+
+void Stepper::setup() {
     pinMode(stepPin, OUTPUT);
     pinMode(dirPin, OUTPUT);
     pinMode(enablePin, OUTPUT);
@@ -29,12 +32,12 @@ Stepper::Stepper(int stepPin, int dirPin, int enablePin, int ms1Pin, int ms2Pin,
     pinMode(ms3Pin, OUTPUT);
     pinMode(resetPin, OUTPUT);
     pinMode(sleepPin, OUTPUT);
-
     digitalWrite(enablePin, HIGH); // Disable driver
     digitalWrite(resetPin, HIGH); // Ensure reset is not active
     digitalWrite(sleepPin, HIGH); // Keep awake
 
-    setSpeed(0.5);
+    stepsPerRevolution = fullStepsPerRevolution * microstepMode;
+    stepAngle = 360.0f / stepsPerRevolution;
 }
 
 void Stepper::setMicrostepMode(int mode) {
@@ -77,21 +80,23 @@ void Stepper::setMicrostepMode(int mode) {
 
     // Use floating-point arithmetic for calculations
     stepsPerRevolution = microstepMode * fullStepsPerRevolution;
-
-    // Debugging: Ensure stepsPerRevolution is correctly calculated
-    Serial.print("stepsPerRevolution: ");
-    Serial.println(stepsPerRevolution);
-
     degreesPerStep = 360.0 / float(stepsPerRevolution);
     stepsPerDegree = 1.0 / degreesPerStep;
-
-    // Debugging: Output calculated values
-    Serial.print("degreesPerStep: ");
-    Serial.println(degreesPerStep, 6);
-    Serial.print("stepsPerDegree: ");
-    Serial.println(stepsPerDegree);
+    Serial.print("[X] "); Serial.println(microstepMode);
 }
 
+void Stepper::cycleMicrostepMode() {
+    if (microstepMode == 1) setMicrostepMode(2);
+    else if (microstepMode == 2) setMicrostepMode(4);
+    else if (microstepMode == 4) setMicrostepMode(8);
+    else if (microstepMode == 8) setMicrostepMode(16);
+    else if (microstepMode == 16) setMicrostepMode(1);
+}
+
+void Stepper::swapDirection() {
+    direction = !direction;
+    setDirection();
+}
 
 // Enable the motor driver
 void Stepper::enableMotor() {
