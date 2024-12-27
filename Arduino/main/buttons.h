@@ -2,18 +2,48 @@
 #define BUTTONS_H
 
 class Poti {
+// Feature ides
+// x Value Mapping: Map the raw analog value to a specific range (e.g., 0-1, 0-100, custom min/max).
+// - Smoothing: Implement a simple moving average or exponential smoothing to reduce noise in the readings.
+// - Threshold Detection: Add methods to check if the value crosses a specific threshold or is within a certain range.
+// - Change Detection: Add a method to detect significant changes since the last read (e.g., greater than a specified delta).
+// - Calibration: Allow setting and storing calibration values for min and max.
+// - Non-linear Mapping: Implement custom mapping functions like exponential or logarithmic scaling.
+// - Value History: Store a history of recent readings for analysis.
+// - Interrupt Support: Include a feature to trigger an event or callback when the value changes significantly.
+// - Debugging Information: Provide a printDebug() method to output the current status and settings via serial.
+// - add a current direction property
+// - add a current velocity property
 public:
-	// Sets up the potentiometer
-	void setupPoti(int pin);
+	// Constructor
+	Poti(int pin, int min_value = 0, int max_value = 1023);
 
-	// Gets the raw analog value from the potentiometer
-	int getValue();
+	// Proprties
+	int pin;
+	int min_value = 0;
+	int max_value = 1023;
+	int currentValue;
+	int thresholdMin = min_value; // Analog 0-1023
+	int thresholdMax = max_value; // Analog 0-1023
+	float mapMin = min_value;
+	float mapMax = max_value;
 
-	// Prints current value
-    void print();
-	void printPct();
+
+	// Utility functions
+	float mapFloat(float x, float in_min, float in_max, float out_min, float out_max);
+	void setup(); // Sets up poti
+	int getAnalog(); // Value 0 to 1023
+	float getPercent(); // Value 0.0% to 100.0%
+	float getFloat(); // Value 0.00 to 1.00
+	float getMap(); // Value from custom map
+	float getDegrees();
+
+	// Methods
+	void read();
+	void setMap(float inputMin, float inputMax); // Setup a custom mapping
+	void setThresholds(float thresholdMinFloat, float thresholdMaxFloat); // Setup thresholds
+
 private:
-	int _potiPin; // Pin connected to the potentiometer
 };
 
 class Button {
@@ -63,11 +93,14 @@ public:
 
 	// Utility functions
 	void getState();
+	void enableMultiClick(bool enabled);
 
 	// Callback functions
 	void onPress(void (*callback)());
 	void onRelease(void (*callback)());
-	void onHold(void (*callback)());
+	// void onHold(void (*callback)());
+	void onHoldStart(void (*callback)());
+	void onWhileHeld(void (*callback)());
 	void onSingleClick(void (*callback)());
 	void onDoubleClick(void (*callback)());
 	void onTripleClick(void (*callback)());
@@ -90,7 +123,9 @@ private:
 	// Event callbacks
 	void (*onPressCallback)() = nullptr;
 	void (*onReleaseCallback)() = nullptr;
-	void (*onHoldCallback)() = nullptr;
+	// void (*onHoldCallback)() = nullptr;
+	void (*onHoldStartCallback)() = nullptr;
+	void (*onWhileHeldCallback)() = nullptr;
 
 	// Click callbacks
 	void (*onSingleClickCallback)() = nullptr;
@@ -104,8 +139,39 @@ private:
 
 class toggleButton {
 public:
+	// Constructor
+	toggleButton(int pin);
+
+	// Properties
 	int pin;
-	bool state;
+	bool state = 0;
+
+	// Timing
+	unsigned long currentTime;
+	unsigned long lastToggle = 0;
+	unsigned long debounceDelay = 250;
+
+	// Utility functions
+
+	// Methods
+	void read();
+	void setup(int pin);
+
+	// Callbacks
+	void onToggle(void (*callback()));
+	void (*onToggleCallback)() = nullptr;
+	
+	void whileOn(void (*callback()));
+	void (*whileOnCallback)() = nullptr;
+
+	void whileOff(void (*callback()));
+	void (*whileOffCallback)() = nullptr;
+
+	void toggledOn(void (*callback()));
+	void (*toggledOnCallback)() = nullptr;
+	
+	void toggledOff(void (*callback()));
+	void (*toggledOffCallback)() = nullptr;
 
 private:
 };
