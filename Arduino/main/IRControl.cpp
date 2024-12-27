@@ -63,7 +63,7 @@ void IRControl::sendEnd() {
 }
 
 void IRControl::setupTimer1At40kHz() {
-
+    Serial.println("Setting timer1");
     // Reset Timer1
     TCCR1A = 0; // reset output behaviour
     TCCR1B = 0; // reset timer mode & clock configuration
@@ -95,6 +95,8 @@ int IRControl::calculateTimer1Frequency(int frequency) {
 }
 
 void IRControl::sendCommand(uint32_t CMD) {
+    Serial.println("Sending CMD");
+    setupTimer1At40kHz();
     // Repeat command 3 times
     for (int j = 0; j < 3; j++) {
         sendHeader(); // Send header
@@ -104,6 +106,7 @@ void IRControl::sendCommand(uint32_t CMD) {
         }
         sendEnd(); // Send stop frame
     }
+    Serial.println("Finished CMD");
 }
 
 uint32_t IRControl::readHexFromSerial() {

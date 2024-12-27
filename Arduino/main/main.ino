@@ -20,15 +20,17 @@
 
 
 // ======================== Libraries =========================== //
+#define IR_SEND_PIN 9 // Set the IR sending pin to Pin 9
 // #inclide <Arduino.h>
 // #include "A4988.h"
 // #include "stepper.h"
 #include "buttons.h"
 #include "IRControl.h"
+#include <IRremote.h>
 
 // ======================== Pindef ============================= //
-#define PIN_A 2   // Button A Signal Pin
-#define PIN_B 3   // Button B Signal Pin
+#define PIN_A 3   // Button A Signal Pin
+#define PIN_B 2   // Button B Signal Pin
 // #define PIN_C 12   // Button C Signal Pin
 // #define PIN_POTI A0 // Potentiometer Signal Pin
 
@@ -50,17 +52,22 @@
 Button buttonA(PIN_A), buttonB(PIN_B);
 IRControl A7R(9, 40000);
 
+IRsend irsend;
+int pin_LED = 9;
 
 // ======================== Main ============================= //
+
 
 
 void setup() {
 	Serial.begin(9600);
 	setupButtons();
+	// pinMode(pin_LED, OUTPUT);
+  // irsend.begin(); // Initialize the IR sender
 
 }
 
-utint32_t command = 0;
+uint32_t command = 0;
 void loop() {
 
   buttonA.read();
@@ -68,6 +75,7 @@ void loop() {
 
   if (Serial.available()) {
 	command = A7R.readHexFromSerial();
+	Serial.println(command);
   }
 
 	// delay(20);
@@ -75,39 +83,21 @@ void loop() {
 
 void setupButtons() {	
 	// Set up buttons
-	buttonA.onSingleClick
-	buttonA.onPress(printPress);
-	buttonA.onRelease(printRelease);
-	buttonA.onHold(printHold);
-
-	buttonA.onSingleClick(printSingle);
-	buttonA.onDoubleClick(printDouble);
-	buttonA.onTripleClick(printTriple);
-
-	// // Set up potentiometer
-	// poti.setupPoti(PIN_POTI);
+	// Button A
+	// buttonA.onSingleClick([] { A7R.sendCommand(command); });
+  buttonA.onSingleClick([] { sendShutter(); });
+	// buttonA.onSingleClick([] { Serial.println("clickA"); });
+	// buttonB.onSingleClick([] { Serial.println("clickB"); });
+	buttonB.onSingleClick([] { digitalWrite(pin_LED, HIGH); });
+	buttonB.onDoubleClick([] { digitalWrite(pin_LED, LOW); });
 }
 
-void printPress() {
-	// Serial.println("pr");
+void sendShutter() {
+  Serial.println("Sending CMD");
+  for (int i = 0; i < 3; i++) {
+    irsend.sendSony(0xB4B8F, 20); // Send Sony 12-bit command
+    delay(40);
+  }
+  
 }
 
-void printRelease() {
-	// Serial.println("rl");
-}
-
-void printHold() {
-	// Serial.println("hl");
-}
-
-void printSingle() {
-	Serial.println("1c");
-}
-
-void printDouble() {
-	Serial.println("2c");
-}
-
-void printTriple() {
-	Serial.println("3c");
-}
