@@ -96,26 +96,40 @@ void readButtons() {
 // Sets up buttons
 void setupButtons() {	
 	// Set up buttons
-	// Button A
-	buttonA.onSingleClick([] { motor.moveStep(); });
-	buttonA.onDoubleClick([] { motor.moveSteps(10); });
-	buttonA.onTripleClick(changeMicrostepping);
-	buttonA.onHold([] { motor.moveToDegree(poti.getDegrees()); } );
-	// buttonA.onHold([] { Serial.println(poti.getDegrees()); } );
-	buttonA.holdTime = 1000;
-	// Button B
-	buttonB.whileOn([] { motor.printStatus(); });
-	
-	// buttonB.onHold([] { Serial.println(poti.getAnalog()); }); // lambda function
-	// Button C
-	buttonC.toggledOn([] { motor.enableMotor(); });
-	buttonC.toggledOff([] { motor.disableMotor(); });
+	buttonA.setup(PIN_A);
 
+	buttonA.onPress(printPress);
+	buttonA.onRelease(printRelease);
+	buttonA.onHold(printHold);
 
-
-	// Setup poti
-
+	buttonA.onSingleClick(printSingle);
+	buttonA.onDoubleClick(printDouble);
+	buttonA.onTripleClick(printTriple);
 
 	// // Set up potentiometer
 	// poti.setupPoti(PIN_POTI);
+}
+
+void printPress() {
+	// Serial.println("pr");
+}
+
+void printRelease() {
+	// Serial.println("rl");
+}
+
+void printHold() {
+	// Serial.println("hl");
+}
+
+void printSingle() {
+	Serial.println("1c");
+}
+
+void printDouble() {
+	Serial.println("2c");
+}
+
+void printTriple() {
+	Serial.println("3c");
 }
