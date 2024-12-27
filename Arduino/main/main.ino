@@ -74,15 +74,13 @@ void readSerial() {
 	String input = Serial.readStringUntil('\n');
 	input.trim(); // Remove any trailing whitespace or newline characters
 
-	// Convert input to a float
-	float speed = input.toFloat();
+	// Process string with custom function
+	processSerial(input);
+}
 
-	// Update motor speed
-	motor.setSpeed(speed);
+// Processes serial input (change this function)
+void processSerial(String input) {
 
-	// Print update
-	Serial.print("Set speed to: ");
-	Serial.println(speed);
 }
 
 // Reads button states
@@ -93,43 +91,24 @@ void readButtons() {
 	poti.read();
 }
 
-// Sets up buttons
 void setupButtons() {	
-	// Set up buttons
-	buttonA.setup(PIN_A);
+	// Button A
+	buttonA.onSingleClick([] { Serial.println("[A] S"); });
+	buttonA.onHoldStart([] { Serial.println("[A] H"); });
+	buttonA.holdTime = 1000;
+	
+	// Button B
+	buttonB.onSingleClick([] { Serial.println("[B] 1"); });
+	buttonB.onDoubleClick([] { Serial.println("[B] 2"); });
+	buttonB.onTripleClick([] { Serial.println("[B] 3"); });
+	buttonB.onWhileHeld([] { Serial.print("[B] "); Serial.println(poti.getPercent()); delay(10); });
+	buttonB.holdTime = 500;
+	buttonB.multiClickDelay = 300;
+	
+	// Button C (toggle button)
+	buttonC.toggledOn([] { Serial.println("[C] 1"); });
+	buttonC.toggledOff([] { Serial.println("[C] 0"); });
+	buttonC.whileOn([] { Serial.print("[C] "); Serial.println(poti.getMap()); delay(10); });
 
-	buttonA.onPress(printPress);
-	buttonA.onRelease(printRelease);
-	buttonA.onHold(printHold);
-
-	buttonA.onSingleClick(printSingle);
-	buttonA.onDoubleClick(printDouble);
-	buttonA.onTripleClick(printTriple);
-
-	// // Set up potentiometer
-	// poti.setupPoti(PIN_POTI);
-}
-
-void printPress() {
-	// Serial.println("pr");
-}
-
-void printRelease() {
-	// Serial.println("rl");
-}
-
-void printHold() {
-	// Serial.println("hl");
-}
-
-void printSingle() {
-	Serial.println("1c");
-}
-
-void printDouble() {
-	Serial.println("2c");
-}
-
-void printTriple() {
-	Serial.println("3c");
+	// Poti
 }
