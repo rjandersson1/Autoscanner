@@ -18,6 +18,7 @@ GND BR  --> GND
 5V  RD  --> 5V
 
 
+
 Arduino codeblock:
 // Pin Definitions
 #define PIN_MS1  13  // YL -> MS1
