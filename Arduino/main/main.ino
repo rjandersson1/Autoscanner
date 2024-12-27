@@ -20,7 +20,7 @@
 
 
 // ======================== Libraries =========================== //
-// #inclide <Arduino.h>
+#include <Arduino.h>
 // #include "A4988.h"
 #include "stepper.h"
 #include "buttons.h"
@@ -62,33 +62,38 @@ void setup() {
 
 }
 
-int microstepMode = 1;
 void loop() {
-
-  buttonA.read();
-  buttonB.read();
-  buttonC.read();
-  poti.read();
-
-  if (Serial.available() > 0) {
-        // Read input as a string to handle edge cases
-        String input = Serial.readStringUntil('\n');
-        input.trim(); // Remove any trailing whitespace or newline characters
-
-        // Convert input to a float
-        float speed = input.toFloat();
-
-		// Update motor speed
-		motor.setSpeed(speed);
-
-		// Print update
-		Serial.print("Set speed to: ");
-		Serial.println(speed);
-  }
-
-//   delay(10);
+	readButtons();
+	readSerial();
 }
 
+// Reads and processes serial inputs
+void readSerial() {
+	if (~(Serial.available() > 0)) return; // exit if no input to serial
+	// Read input as a string to handle edge cases
+	String input = Serial.readStringUntil('\n');
+	input.trim(); // Remove any trailing whitespace or newline characters
+
+	// Convert input to a float
+	float speed = input.toFloat();
+
+	// Update motor speed
+	motor.setSpeed(speed);
+
+	// Print update
+	Serial.print("Set speed to: ");
+	Serial.println(speed);
+}
+
+// Reads button states
+void readButtons() {
+	buttonA.read();
+	buttonB.read();
+	buttonC.read();
+	poti.read();
+}
+
+// Sets up buttons
 void setupButtons() {	
 	// Set up buttons
 	// Button A
@@ -113,11 +118,4 @@ void setupButtons() {
 
 	// // Set up potentiometer
 	// poti.setupPoti(PIN_POTI);
-}
-
-void changeMicrostepping() {
-	microstepMode = microstepMode * 2;
-	if (microstepMode > 16) microstepMode = 1;
-	motor.setMicrostepMode(microstepMode);
-	Serial.println(microstepMode);
 }
