@@ -9,7 +9,7 @@ IRControl::IRControl(int pin = 9, int frequency = 40000)
 {
     pinMode(pin, OUTPUT);
     digitalWrite(pin, LOW);
-    setupTimer1at40Khz();
+    setupTimerAt40kHz();
 }
 
 void IRControl::on() {
@@ -62,7 +62,7 @@ void IRControl::sendEnd() {
     delay(40); // 40ms delay
 }
 
-void IRControl::setupTimer1At40kHz() {
+void IRControl::setupTimerAt40kHz() {
     Serial.println("Setting timer1");
     // Reset Timer1
     TCCR1A = 0; // reset output behaviour
@@ -91,12 +91,12 @@ int IRControl::calculateTimer1Frequency(int frequency) {
     int clockSpeed = 16000000; // 16MHz (arduino uno)
     int prescaler = 8; // preset for 40kHz 
     int result = clockSpeed/(prescaler*frequency) - 1;
-    return result
+    return result;
 }
 
 void IRControl::sendCommand(uint32_t CMD) {
     Serial.println("Sending CMD");
-    setupTimer1At40kHz();
+    setupTimerAt40kHz();
     // Repeat command 3 times
     for (int j = 0; j < 3; j++) {
         sendHeader(); // Send header

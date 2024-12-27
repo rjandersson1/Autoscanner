@@ -98,7 +98,9 @@ public:
 	// Callback functions
 	void onPress(void (*callback)());
 	void onRelease(void (*callback)());
-	void onHold(void (*callback)());
+	// void onHold(void (*callback)());
+	void onHoldStart(void (*callback)());
+	void onWhileHeld(void (*callback)());
 	void onSingleClick(void (*callback)());
 	void onDoubleClick(void (*callback)());
 	void onTripleClick(void (*callback)());
@@ -121,7 +123,9 @@ private:
 	// Event callbacks
 	void (*onPressCallback)() = nullptr;
 	void (*onReleaseCallback)() = nullptr;
-	void (*onHoldCallback)() = nullptr;
+	// void (*onHoldCallback)() = nullptr;
+	void (*onHoldStartCallback)() = nullptr;
+	void (*onWhileHeldCallback)() = nullptr;
 
 	// Click callbacks
 	void (*onSingleClickCallback)() = nullptr;

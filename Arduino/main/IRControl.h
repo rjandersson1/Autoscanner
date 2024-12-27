@@ -1,5 +1,6 @@
 #ifndef IRCONTROL_H
 #define IRCONTROL_H
+#include <Arduino.h>
 
 class IRControl {
 public:

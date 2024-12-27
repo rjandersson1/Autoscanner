@@ -182,8 +182,15 @@ void Button::processClickSequence() {
 void Button::processHoldEvent() {
 	// Ensure the button is in the pressed state and the hold time has passed
 	if (currentState == LOW && currentTime - pressedTime > holdTime) {
-		isHeld = 1; // Mark the button as held
-		if (onHoldCallback) onHoldCallback(); // Trigger generic hold callback if defined
+
+		// If start of hold and callback defined, run onHoldStart function
+		if (isHeld == 0 && onHoldStartCallback) onHoldStartCallback();
+
+		// Set isHeld to true
+		isHeld = 1;
+
+		// If while held callback defined, run onWhileHeld function
+		if (onWhileHeldCallback) onWhileHeldCallback(); 
 
 		// Check click count and determine the hold type
 		if (clickCount == 1 && !isSingleClickHold) {
@@ -250,8 +257,18 @@ void Button::onRelease(void (*callback)()) {
     onReleaseCallback = callback; // Store the user-defined function pointer
 }
 
-void Button::onHold(void (*callback)()) {
-    onHoldCallback = callback; // Store the user-defined function pointer
+// void Button::onHold(void (*callback)()) {
+//     onHoldCallback = callback; // Store the user-defined function pointer
+// }
+
+// When first held, call function once
+void Button::onHoldStart(void (*callback)()) {
+	onHoldStartCallback = callback; // Store the user-defined function pointer
+}
+
+// While held, continually call function
+void Button::onWhileHeld(void (*callback)()) {
+	onWhileHeldCallback = callback; // Store the user-defined function pointer
 }
 
 void Button::onSingleClick(void (*callback)()) {
