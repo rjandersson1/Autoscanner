@@ -93,3 +93,30 @@ size_t A4988::getMicrostepTableSize(){
 short A4988::getMaxMicrostep(){
     return A4988::MAX_MICROSTEP;
 }
+
+
+// ================= CUSTOM METHODS ==================== //
+void A4988::cycleMicrostepMode() {
+    // Microstepping divisors corresponding to MS_TABLE
+    static const short microstepModes[] = {1, 2, 4, 8, 16};
+    static const size_t numModes = sizeof(microstepModes) / sizeof(microstepModes[0]);
+
+    // Find current mode index
+    size_t currentIndex = 0;
+    for (size_t i = 0; i < numModes; i++) {
+        if (microsteps == microstepModes[i]) {
+            currentIndex = i;
+            break;
+        }
+    }
+
+    // Cycle to the next mode (wrap around using modulo)
+    currentIndex = (currentIndex + 1) % numModes;
+
+    // Set the new microstep mode using the corresponding mask from MS_TABLE
+    setMicrostep(microstepModes[currentIndex]);
+}
+
+short A4988::getMicrostep() {
+    return microsteps;
+}

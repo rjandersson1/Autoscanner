@@ -247,5 +247,17 @@ public:
     long calcStepsForRotation(double deg){
         return deg * motor_steps * microsteps / 360;
     }
+
+public:
+    // ====================== CUSTOM PROPERTIES ====================== //
+    float shaftDiameter = 1; // [mm]
+    float outputRatio = 1; // [-]
+    float mmPerDegree = 1; // [mm]
+    float frameWidth = 36; // [mm]
+
+    // ====================== CUSTOM METHODS ====================== //
+    void setOutputRatio(float diameter, float ratio); // Sets mechanical properties of shaft for mm calculations
+    void moveFrame();
+
 };
 #endif // STEPPER_DRIVER_BASE_H

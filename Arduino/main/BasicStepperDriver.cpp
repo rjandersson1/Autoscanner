@@ -376,3 +376,15 @@ void BasicStepperDriver::disable(void){
 short BasicStepperDriver::getMaxMicrostep(){
     return BasicStepperDriver::MAX_MICROSTEP;
 }
+
+// ====================== CUSTOM METHODS ====================== //
+void BasicStepperDriver::moveFrame() {
+    float targetDegrees = frameWidth / mmPerDegree; // [mm / (mm/deg)] = [deg]
+    rotate(targetDegrees);
+}
+
+void BasicStepperDriver::setOutputRatio(float diameter, float ratio) {
+    shaftDiameter = diameter;
+    outputRatio = ratio;
+    mmPerDegree = (3.1415 * shaftDiameter) / (360.0 * outputRatio);
+}

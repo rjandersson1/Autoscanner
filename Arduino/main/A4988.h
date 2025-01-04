@@ -52,5 +52,15 @@ public:
     A4988(short steps, short dir_pin, short step_pin, short ms1_pin, short ms2_pin, short ms3_pin);
     A4988(short steps, short dir_pin, short step_pin, short enable_pin, short ms1_pin, short ms2_pin, short ms3_pin);
     short setMicrostep(short microsteps) override;
+
+// ============== CUSTOM METHODS ================== //
+    short microstep;
+    short getMicrostep();
+    void cycleMicrostepMode();
 };
+
+
+
+
+
 #endif // A4988_H
