@@ -1,4 +1,4 @@
-#include "stepper.h"
+#include "stepper_custom.h"
 #include <Arduino.h>
 
 // Define Functions here
