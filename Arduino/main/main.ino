@@ -1,3 +1,4 @@
+
 // ======================== Changelog =========================== //
 //  Date        Version     Comments
 //  02.12.24    0.0         Init
@@ -18,8 +19,10 @@
 
 // ======================== Libraries =========================== //
 #include <Arduino.h>
+#include <IRremote.h>
 // #include "stepper.h"
 #include "buttons.h"
+#include "filmScanner.h"
 
 // ======================== Pindef ============================= //
 
@@ -28,6 +31,7 @@
 #define PIN_DIR  11  // OR -> DIR
 #define PIN_STEP 10  // RD -> STEP
 #define PIN_IR   9   // BR -> IR LED
+#define IR_SEND_PIN PIN_IR // Set the IR sending pin to Pin 9
 #define PIN_SLP  8   // BR -> SLP
 #define PIN_RST  7   // BK -> RST
 #define PIN_MS3  6   // WH -> MS3
@@ -44,6 +48,7 @@ Button buttonA(PIN_BTN_A);
 Button buttonB(PIN_BTN_B);
 toggleButton buttonC(PIN_BTN_C);
 Poti poti(PIN_POTI, 0, 1023);
+IRsend ir(IR_SEND_PIN); // IR object
 
 // Stepper
 #include "A4988.h"
@@ -53,6 +58,9 @@ Poti poti(PIN_POTI, 0, 1023);
 #define MOTOR_DECEL 9999999 // [STEP/s]
 #define MICROSTEPS 16 // Microstep mode (hardwired)
 A4988 stepper(MOTOR_STEPS, PIN_DIR, PIN_STEP, PIN_EN, PIN_MS1, PIN_MS2, PIN_MS3);
+
+// Film scanner
+filmScanner scanner(stepper, buttonA, buttonB, buttonC, poti);
 
 
 // ======================== Main ============================= //
@@ -99,49 +107,21 @@ void readButtons() {
 
 void setupButtons() {	
 	// Button A
-	// buttonA.onSingleClick([] { stepper.enable(); stepper.rotate(360 * currentDir); });
-	// buttonA.onWhileHeld([] { stepper.enable(); stepper.rotate(360 * currentDir); });
-	buttonA.onSingleClick([] { stepper.setSpeedProfile(stepper.LINEAR_SPEED, poti.getMap(), 99999999); Serial.print("Accel: "); Serial.println(poti.getMap()); });
-	// buttonA.onDoubleClick([] { stepper.setSpeedProfile(stepper.LINEAR_SPEED, poti.getMap(), poti.getMap()); });
-	// buttonA.onSingleClick([] { stepper.setRPM(poti.getMap()); Serial.print("RPM: "); Serial.println(poti.getMap()); });
-	// buttonA.onTripleClick([] { stepper.cycleMicrostepMode(); Serial.print("microstep: "); Serial.println(stepper.getMicrostep()); });
-	buttonA.holdTime = 1000;
+	buttonA.onSingleClick([] { stepper.enable(); });
+	buttonA.onHoldStart([] { stepper.disable(); });
+	buttonA.holdTime = 500;
 	buttonA.multiClickDelay = 0;
 	
 	// Button B
 	buttonB.holdTime = 1000;
 	buttonB.multiClickDelay = 0;
 	buttonB.onSingleClick([] { stepper.rotate(20*360); });
-	// Set RPM from poti
-	// buttonB.onSingleClick([] { 
-	// 	Serial.print("[B] setRPM: " );
-	// 	poti.setMap(1,1000);
-	// 	stepper.setRPM(poti.getMap());
-	// 	Serial.println(poti.getMap());
-	// });
-	
-	// buttonB.onDoubleClick([] { 
-	// 	Serial.print("[B] setAccel: "); 
-	// 	poti.setMap(100,10000);
-	// 	short accel = short(poti.getMap());
-	// 	stepper.setSpeedProfile(stepper.LINEAR_SPEED, accel, accel);
-	// 	Serial.println(accel);
-	// });
 
-	// buttonB.onTripleClick([] { 
-	// 	Serial.print("[B] microstep: "); 
-	// 	stepper.cycleMicrostepMode();
-	// 	Serial.println(stepper.getMicrostep());
-	// });
-	// buttonB.onWhileHeld([] { Serial.print("[B] "); Serial.println(poti.getPercent()); delay(10); });
-	
 	// Button C (toggle button)
-	buttonC.whileOn([] { Serial.print("[C] "); Serial.println(poti.getMap()); delay(10); });
-	// buttonC.toggledOff([] { stepper.disable(); });
-	// buttonC.whileOn([] { Serial.print("[C] "); Serial.println(poti.getMap()); delay(10); });
+	buttonC.toggledOn([] { scanner.dynamicMove(); });
 
 	// Poti
-	poti.setMap(10000,50000); // Set microseconds map
+	// poti.setMap(10000,50000); // Set microseconds map
 
 	Serial.println("Buttons initialized successfully");
 }
@@ -151,7 +131,6 @@ void setupStepper() {
 	stepper.setEnableActiveState(LOW); // Enabled when PIN_EN LOW
 	stepper.setSpeedProfile(stepper.LINEAR_SPEED, MOTOR_ACCEL, MOTOR_DECEL); // set acceleration profile
 	stepper.setMicrostep(1);
-	stepper.setOutputRatio(80,1);
 	stepper.enable();
 	Serial.println("Stepper initializedd successfully");
 }
