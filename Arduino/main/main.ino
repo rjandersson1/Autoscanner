@@ -41,6 +41,27 @@
 #define PIN_BTN_C 2  // BK -> BUTTON C
 #define PIN_POTI A0  // RD -> POTI
 
+// ===================== Button Callback Definition =================//
+
+#define FUN_A1 stepper.cycleMicrostepMode();
+#define FUN_A2 
+#define FUN_A3 
+#define FUN_AH 
+#define TIME_AH 1000
+#define TIME_A 500
+
+#define FUN_B1 
+#define FUN_B2 
+#define FUN_B3 
+#define FUN_BH 
+#define TIME_BH 1000
+#define TIME_B 500
+
+#define FUN_C_TOGGLED 
+#define FUN_C_WHILEON 
+#define FUN_C_ON dynamicMove()
+#define FUN_C_OFF
+
 // ====================== Object Definition ======================== //
 
 // Utility
@@ -86,25 +107,27 @@ void readButtons() {
 }
 
 void setupButtons() {	
-	// Button A
-	// buttonA.onSingleClick([] { stepper.disable(); });
-	// buttonA.onHoldStart([] { stepper.disable(); });
-	buttonA.onSingleClick(testMillis);
-	buttonA.holdTime = 500;
-	buttonA.multiClickDelay = 0;
-	
-	// Button B
-	buttonB.holdTime = 1000;
-	buttonB.multiClickDelay = 0;
-	// buttonB.onSingleClick([] { stepper.cycleMicrostepMode(); });
-	buttonB.onSingleClick(testMicros);
-	
+  // Button A
+  buttonA.onSingleClick([] { FUN_A1; });
+  buttonA.onDoubleClick([] { FUN_A2; });
+  buttonA.onTripleClick([] { FUN_A3; });
+  buttonA.onHoldStart([] { FUN_AH; });
+  buttonA.holdTime = TIME_AH;
+  buttonA.multiClickDelay = TIME_A;
+  
+  // Button B
+  buttonB.onSingleClick([] { FUN_B1; });
+  buttonB.onDoubleClick([] { FUN_B2; });
+  buttonB.onTripleClick([] { FUN_B3; });
+  buttonB.onHoldStart([] { FUN_BH; });
+  buttonB.holdTime = TIME_BH;
+  buttonB.multiClickDelay = TIME_B;
 
-	// Button C (toggle button)
-	buttonC.toggledOn([] { scanner.dynamicMove(); });
-
-	// Poti
-	// poti.setMap(10000,50000); // Set microseconds map
+  // Button C
+  buttonC.onToggle([] { FUN_C_TOGGLED; });
+  buttonC.whileOn([] { FUN_C_WHILEON; });
+  buttonC.toggledOn([] { FUN_C_ON; });
+  buttonC.toggledOff([] { FUN_OFF; });
 }
 
 void setupStepper() {
@@ -115,12 +138,20 @@ void setupStepper() {
 	stepper.enable();
 }
 
-void testMillis() {
-	timer.startMillis();
-	timer.endMillis();
-}
-
-void testMicros() {
-	timer.startMicros();
-	timer.endMicros();
+void dynamicMove() {
+	poti.setMap(-50,50);
+	steper.startMove(100000);
+	const float hysteresisThreshold = 10;
+	while (buttonC.state) {
+		float rpm = poti.getMap();
+		if (abs(rpm) < hysteresisThreshold - 1) {
+			stepper.disable();
+		}
+		if ((abs(rpm) > hysteresisThreshold + 1) && abs(stepper.getCurrentRPM() - abs(rpm)) > 1) {
+			stepper.enable();
+			stepper.setrRPM(rpm);
+		}
+		buttonC.read();
+		stepper.nextAction();
+	}dMicros();
 }
