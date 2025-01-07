@@ -28,6 +28,7 @@ void Poti::read() {
 
 // Returns analog value
 int Poti::getAnalog() {
+	long t0 = micros();
 	return currentValue;
 }
 
@@ -66,10 +67,6 @@ void Poti::setThresholds(float thresholdMinFloat, float thresholdMaxFloat) {
 	thresholdMin = map(thresholdMinFloat, 0.0, 1.0, 0, 1023);
 	thresholdMax = map(thresholdMaxFloat, 0.0, 1.0, 0, 1023);
 }
-
-//
-
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -342,4 +339,34 @@ void toggleButton::toggledOn(void (*callback())) {
 
 void toggleButton::toggledOff(void (*callback())) {
 	toggledOffCallback = callback;
+}
+
+// ================================= Timer Object ==================================== //
+
+// Starts the timer using micros()
+void Timer::startMicros() {
+    startTimeMicros = micros();
+}
+
+// Ends the timer, calculates dT in microseconds, and prints it
+void Timer::endMicros() {
+    unsigned long endTime = micros();
+    unsigned long dT = endTime - startTimeMicros;
+    Serial.print("dT (micros): ");
+    Serial.print(dT);
+    Serial.println(" microseconds");
+}
+
+// Starts the timer using millis()
+void Timer::startMillis() {
+    startTimeMillis = millis();
+}
+
+// Ends the timer, calculates dT in milliseconds, and prints it
+void Timer::endMillis() {
+    unsigned long endTime = millis();
+    unsigned long dT = endTime - startTimeMillis;
+    Serial.print("dT (millis): ");
+    Serial.print(dT);
+    Serial.println(" milliseconds");
 }

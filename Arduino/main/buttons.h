@@ -176,4 +176,24 @@ public:
 private:
 };
 
+class Timer {
+    private:
+        unsigned long startTimeMicros;
+        unsigned long startTimeMillis;
+
+    public:
+        // Starts the timer using micros()
+        void startMicros();
+
+        // Ends the timer, calculates dT in microseconds, and prints it
+        void endMicros();
+
+        // Starts the timer using millis()
+        void startMillis();
+
+        // Ends the timer, calculates dT in milliseconds, and prints it
+        void endMillis();
+};
+
+
 #endif // BUTTONS_H
