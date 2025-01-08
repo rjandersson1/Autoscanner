@@ -22,8 +22,8 @@ void Poti::setup() {
 // Reads current value
 void Poti::read() {
 	currentValue = analogRead(pin);
-	if (currentValue > max_value) currentValue = max_value;
-	if (currentValue < min_value) currentValue = min_value;
+	// if (currentValue > max_value) currentValue = max_value;
+	// if (currentValue < min_value) currentValue = min_value;
 }
 
 // Returns analog value
@@ -46,7 +46,7 @@ float Poti::getFloat() {
 
 // Returns custom mapping
 float Poti::getMap() {
-	float value = mapFloat(currentValue, min_value, max_value, mapMin, mapMax);
+	float value = mapFloat(analogRead(pin), min_value, max_value, mapMin, mapMax);
 	return value;
 }
 
