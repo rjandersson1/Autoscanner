@@ -50,8 +50,8 @@
 #define TIME_AH 1000
 #define TIME_A 500
 
-#define FUN_B1 
-#define FUN_B2 
+#define FUN_B1 stepper.disable();
+#define FUN_B2 stepper.enable();
 #define FUN_B3 
 #define FUN_BH 
 #define TIME_BH 1000
@@ -87,7 +87,7 @@ filmScanner scanner(stepper, buttonA, buttonB, buttonC, poti);
 // ======================== Main ============================= //
 
 void setup() {
-	Serial.begin(9600);
+	Serial.begin(115200);
 	setupButtons();
 	setupStepper();
 	Serial.println("init...");
@@ -95,7 +95,6 @@ void setup() {
 
 void loop() {
 	readButtons();
-	readSerial();
 }
 
 // Reads button states
@@ -127,7 +126,7 @@ void setupButtons() {
   buttonC.onToggle([] { FUN_C_TOGGLED; });
   buttonC.whileOn([] { FUN_C_WHILEON; });
   buttonC.toggledOn([] { FUN_C_ON; });
-  buttonC.toggledOff([] { FUN_OFF; });
+  buttonC.toggledOff([] { FUN_C_OFF; });
 }
 
 void setupStepper() {
@@ -139,19 +138,22 @@ void setupStepper() {
 }
 
 void dynamicMove() {
-	poti.setMap(-50,50);
-	steper.startMove(100000);
-	const float hysteresisThreshold = 10;
+	poti.setMap(0,400);
+	stepper.startMove(100000);
+	stepper.setRPM(100);
+	Serial.println(stepper.getMicrostep());
+	// stepper.setMicrostep(16);
+	float prevRPM = 0;
 	while (buttonC.state) {
+		unsigned wait_time_micros = stepper.nextAction();
 		float rpm = poti.getMap();
-		if (abs(rpm) < hysteresisThreshold - 1) {
-			stepper.disable();
-		}
-		if ((abs(rpm) > hysteresisThreshold + 1) && abs(stepper.getCurrentRPM() - abs(rpm)) > 1) {
-			stepper.enable();
-			stepper.setrRPM(rpm);
+		float deltaRPM = abs(prevRPM - rpm);
+		if (wait_time_micros > 1 && deltaRPM > 1){
+			stepper.setRPM(rpm);
+			stepper.startMove(1000000);
+			prevRPM = rpm;
 		}
 		buttonC.read();
-		stepper.nextAction();
-	}dMicros();
+	}
 }
+
