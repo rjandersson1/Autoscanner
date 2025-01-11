@@ -43,24 +43,33 @@
 
 // ===================== Button Callback Definition =================//
 
-#define FUN_A1 stepper.cycleMicrostepMode();
+#define FUN_A1 stepper.cycleMicrostepMode()
 #define FUN_A2 
 #define FUN_A3 
 #define FUN_AH 
 #define TIME_AH 1000
 #define TIME_A 500
 
-#define FUN_B1 stepper.disable();
-#define FUN_B2 stepper.enable();
-#define FUN_B3 
-#define FUN_BH 
+#define FUN_B1 stepper.setSpeedProfile(stepper.LINEAR_SPEED, 16000, 1000)
+#define FUN_B2 stepper.setSpeedProfile(stepper.LINEAR_SPEED, 1000, 1000)
+#define FUN_B3 stepper.setSpeedProfile(stepper.LINEAR_SPEED, 1000, 1600)
+#define FUN_BH stepper.setSpeedProfile(stepper.LINEAR_SPEED, 16000, 9999999)
 #define TIME_BH 1000
 #define TIME_B 500
 
 #define FUN_C_TOGGLED 
 #define FUN_C_WHILEON 
 #define FUN_C_ON dynamicMove()
-#define FUN_C_OFF
+int updateDelay = 100; // [uS]
+#define FUN_C_OFF changeUpdateDelay()
+
+// Temp function to read a val from poti.
+void changeUpdateDelay() {
+	poti.setMap(0,50000);
+	updateDelay = round(poti.getMap());
+	Serial.print("delay [uS] = ");
+	Serial.println(updateDelay);
+}
 
 // ====================== Object Definition ======================== //
 
@@ -142,16 +151,38 @@ void dynamicMove() {
 	stepper.startMove(100000);
 	stepper.setRPM(100);
 	Serial.println(stepper.getMicrostep());
-	// stepper.setMicrostep(16);
+	// stepper.setMicrostep(8);
 	float prevRPM = 0;
+	unsigned lastUpdate = micros();
 	while (buttonC.state) {
 		unsigned wait_time_micros = stepper.nextAction();
 		float rpm = poti.getMap();
 		float deltaRPM = abs(prevRPM - rpm);
-		if (wait_time_micros > 1 && deltaRPM > 1){
+		if (micro() - lastUpdate > updateDelay && deltaRPM > 1){
 			stepper.setRPM(rpm);
 			stepper.startMove(1000000);
 			prevRPM = rpm;
+			lastUpdate = micros();
+		}
+		buttonC.read();
+	}
+}
+
+
+// Moves to current poti defined position.
+void dynamicPosition() {
+	poti.setMap(0,720);
+	stepper.setSpeedProfile(stepper.LINEAR_SPEED, 16000, 999999);
+
+	int targetPos = poti.getMap();
+	int prevPos = 0;
+	int posThreshold = 1;
+
+	stepper.startRotate(targetPos);
+	while (buttonC.state) {
+		targetPos = poti.getMap();
+		if (abs(targetPos - prevPos) > posThreshold) {
+			stepper.startRotate(targetPos);
 		}
 		buttonC.read();
 	}
