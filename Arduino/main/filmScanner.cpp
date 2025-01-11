@@ -35,58 +35,10 @@ void filmScanner::setOutputRatio(float diameter, float ratio) {
 }
 
 void filmScanner::dynamicMove() {
-    poti.setMap(0, 500);              // Set potentiometer mapping range
-    // while (abs(poti.getMap()) > 10) {
-    //     poti.read();
-    //     Serial.print("Move poti to 0: ");
-    //     Serial.println(poti.getMap());
-    // }     // wait until poti moved to 0 before continuing
+    poti.setMap(-50,50);
+    int newRPM = 0;
+    int oldRPM = 0;
+    newRPM = poti.getMap(); // Init first RPM
+    stepper.setMicrostep(16);
 
-    stepper.enable();
-    const long largeStepCount = 10000; // Arbitrary large step count
-    short direction = 1;                 // Initial direction
-    short lastDirection = 1;             // To track direction changes
-    short rpmThreshold = 1;
-    stepper.setMicrostep(1);
-    // stepper.setRPM(100);
-    // stepper.startMove(largeStepCount);   // Start non-blocking stepper move
-
-    while (buttonC.state) {              // Run while buttonC is active
-        poti.read();
-        buttonC.read();
-        int rpm = poti.getMap();       // Get RPM from potentiometer
-        stepper.setRPM(rpm);
-        stepper.move(200);
-        Serial.println(rpm);
-        // stepper.rotate(pos);
-        // if (abs(rpm) < 10) {             // Threshold to stop motor
-        //     stepper.stop();
-        // } else if (rpm < 0) {
-        //     direction = -1;              // Set direction to reverse
-        //     rpm = abs(rpm);              // Use absolute RPM value
-        // } else {
-        //     direction = 1;               // Set direction to forward
-        // }
-
-        // if (direction != lastDirection) {  // Check if direction changed
-        //     // stepper.stop();
-        //     stepper.startMove(direction*largeStepCount);
-        //     lastDirection = direction;            // Save current direction
-        // } 
-        // rpm = 2;
-        // stepper.setRPM(rpm);             // Update RPM
-        // stepper.stop();
-        // stepper.startMove(largeStepCount);
-        // stepper.move(10);
-        // stepper.startMove(largeStepCount);
-        // if (rpm > rpmThreshold) {
-        //   stepper.enable();
-        //   stepper.startMove(largeStepCount);
-        // }
-        // else {
-        //   stepper.disable();
-        //   stepper.stop();
-        // }
-        // stepper.nextAction();            // Execute next step
-    }
 }
