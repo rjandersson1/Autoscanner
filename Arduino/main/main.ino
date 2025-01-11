@@ -43,7 +43,7 @@
 
 // ===================== Button Callback Definition =================//
 
-#define TEMP_AMOUNT 1 // amount to change RPM by
+#define TEMP_AMOUNT 10 // amount to change RPM by
 
 #define FUN_A1 updateRPM((-TEMP_AMOUNT))
 #define FUN_A2 
@@ -62,7 +62,7 @@
 
 #define FUN_C_TOGGLED 
 #define FUN_C_WHILEON 
-#define FUN_C_ON dynamicMove()
+#define FUN_C_ON dynamicPosition()
 int updateDelay = 100; // [uS]
 #define FUN_C_OFF 
 
@@ -176,21 +176,28 @@ void dynamicMove() {
 
 // Moves to current poti defined position.
 void dynamicPosition() {
-	poti.setMap(0,720);
-	stepper.setSpeedProfile(stepper.LINEAR_SPEED, 16000, 999999);
+	int mapVal = 400;
+	int offset = 0;
+    poti.setMap(-mapVal, mapVal);  // Set the mapping range for the potentiometer
+    int currentPosition = 0;  // Variable to track the current stepper position
+    int targetPosition = 0;   // Variable to store target position
+	stepper.setMicrostep(16);
+	stepper.setRPM(10);
 
-	int targetPos = poti.getMap();
-	int prevPos = 0;
-	int posThreshold = 1;
-
-	stepper.startRotate(targetPos);
-	while (buttonC.state) {
-		targetPos = poti.getMap();
-		if (abs(targetPos - prevPos) > posThreshold) {
-			stepper.startRotate(targetPos);
-		}
-		buttonC.read();
-	}
+    while (buttonC.state) {  // Loop while the button is pressed
+        buttonC.read();  // Update the button state
+        targetPosition = poti.getMap();  // Get the mapped potentiometer value
+		if (abs(targetPosition) > mapVal * 0.99) {
+			if (targetPosition > 1) offset = offset + 1;
+			if (targetPosition < 1) offset = offset - 1;
+		} else offset = 0;
+        
+        int stepsToMove = targetPosition + offset - currentPosition;  // Calculate steps to move
+        stepper.move(stepsToMove);  // Move stepper by the calculated steps
+        
+        currentPosition = targetPosition;  // Update the current position
+		Serial.println(currentPosition);
+    }
 }
 
 // Temp function to read a val from poti.
