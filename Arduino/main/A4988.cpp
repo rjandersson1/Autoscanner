@@ -113,8 +113,13 @@ void A4988::cycleMicrostepMode() {
     // Cycle to the next mode (wrap around using modulo)
     currentIndex = (currentIndex + 1) % numModes;
 
+    // Choose microstep
+    int microstepValue = microstepModes[currentIndex];
+    Serial.print("uStp: ");
+    Serial.println(microstepValue);
+
     // Set the new microstep mode using the corresponding mask from MS_TABLE
-    setMicrostep(microstepModes[currentIndex]);
+    setMicrostep(microstepValue);
 }
 
 short A4988::getMicrostep() {
