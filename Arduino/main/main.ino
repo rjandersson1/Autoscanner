@@ -43,7 +43,7 @@
 
 // ===================== Button Callback Definition =================//
 
-#define TEMP_AMOUNT 5 // amount to change RPM by
+#define TEMP_AMOUNT 1 // amount to change RPM by
 
 #define FUN_A1 updateRPM((-TEMP_AMOUNT))
 #define FUN_A2 
@@ -145,21 +145,13 @@ void setupStepper() {
 void dynamicMove() {
 	poti.setMap(0,400);
 	stepper.startMove(100000);
-	stepper.setRPM(100);
+	// stepper.setRPM(100);
 	Serial.println(stepper.getMicrostep());
 	// stepper.setMicrostep(8);
 	float prevRPM = 0;
 	unsigned lastUpdate = micros();
 	while (buttonC.state) {
 		unsigned wait_time_micros = stepper.nextAction();
-		// float rpm = poti.getMap();
-		// float deltaRPM = abs(prevRPM - rpm);
-		// if (micros() - lastUpdate > updateDelay && deltaRPM > 1){
-		// 	stepper.setRPM(rpm);
-		// 	stepper.startMove(1000000);
-		// 	prevRPM = rpm;
-		// 	lastUpdate = micros();
-		// }
 		buttonA.read();
 		buttonB.read();
 		buttonC.read();
@@ -168,8 +160,13 @@ void dynamicMove() {
 
 
 // Moves to current poti defined position.
+int prevRPM = 0;
 void dynamicPosition() {
-	poti.setMap(0,720);
+	poti.setMap(5,200);
+	stepper.setMicrostep(16);
+	prevRPM = newRPM;
+	int newRPM = map(analogRead(buttonC.pin), 0, 1023, 0, 200);
+
 	stepper.setSpeedProfile(stepper.LINEAR_SPEED, 16000, 999999);
 
 	int targetPos = poti.getMap();

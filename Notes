@@ -32,6 +32,10 @@ Constant speed:
 @Max Accel (16000 ~= 2^14):
 @9v, full  ~1250rpm (power cutoff from USB C, inconsistent above 1350rpm)
 
+got up to 1300RPM @1stp comfortably.
+lowest rpm ~60RPM @1stp.
+lowest rpm ~5RPM @16stp.
+
 =================== A4982 =====================
 A4982 Wiring as follows
 
