@@ -43,33 +43,29 @@
 
 // ===================== Button Callback Definition =================//
 
-#define FUN_A1 stepper.cycleMicrostepMode()
+#define TEMP_AMOUNT 5 // amount to change RPM by
+
+#define FUN_A1 updateRPM((-TEMP_AMOUNT))
 #define FUN_A2 
 #define FUN_A3 
 #define FUN_AH 
 #define TIME_AH 1000
-#define TIME_A 500
+#define TIME_A 0
 
-#define FUN_B1 stepper.setSpeedProfile(stepper.LINEAR_SPEED, 16000, 1000)
-#define FUN_B2 stepper.setSpeedProfile(stepper.LINEAR_SPEED, 1000, 1000)
-#define FUN_B3 stepper.setSpeedProfile(stepper.LINEAR_SPEED, 1000, 1600)
-#define FUN_BH stepper.setSpeedProfile(stepper.LINEAR_SPEED, 16000, 9999999)
+
+#define FUN_B1 updateRPM(TEMP_AMOUNT)
+#define FUN_B2 
+#define FUN_B3 
+#define FUN_BH stepper.cycleMicrostepMode()
 #define TIME_BH 1000
-#define TIME_B 500
+#define TIME_B 0
 
 #define FUN_C_TOGGLED 
 #define FUN_C_WHILEON 
 #define FUN_C_ON dynamicMove()
 int updateDelay = 100; // [uS]
-#define FUN_C_OFF changeUpdateDelay()
+#define FUN_C_OFF 
 
-// Temp function to read a val from poti.
-void changeUpdateDelay() {
-	poti.setMap(0,50000);
-	updateDelay = round(poti.getMap());
-	Serial.print("delay [uS] = ");
-	Serial.println(updateDelay);
-}
 
 // ====================== Object Definition ======================== //
 
@@ -156,14 +152,16 @@ void dynamicMove() {
 	unsigned lastUpdate = micros();
 	while (buttonC.state) {
 		unsigned wait_time_micros = stepper.nextAction();
-		float rpm = poti.getMap();
-		float deltaRPM = abs(prevRPM - rpm);
-		if (micro() - lastUpdate > updateDelay && deltaRPM > 1){
-			stepper.setRPM(rpm);
-			stepper.startMove(1000000);
-			prevRPM = rpm;
-			lastUpdate = micros();
-		}
+		// float rpm = poti.getMap();
+		// float deltaRPM = abs(prevRPM - rpm);
+		// if (micros() - lastUpdate > updateDelay && deltaRPM > 1){
+		// 	stepper.setRPM(rpm);
+		// 	stepper.startMove(1000000);
+		// 	prevRPM = rpm;
+		// 	lastUpdate = micros();
+		// }
+		buttonA.read();
+		buttonB.read();
 		buttonC.read();
 	}
 }
@@ -188,3 +186,25 @@ void dynamicPosition() {
 	}
 }
 
+// Temp function to read a val from poti.
+void changeUpdateDelay() {
+	poti.setMap(0,50000);
+	updateDelay = round(poti.getMap());
+	Serial.print("delay [uS] = ");
+	Serial.println(updateDelay);
+}
+
+
+int prevRPM = 0;
+int newRPM = 0;
+void updateRPM(int amount) {
+	stepper.enable();
+	prevRPM = newRPM;
+	newRPM = prevRPM + amount;
+	Serial.println(newRPM);
+	stepper.setRPM(newRPM);
+	int dir = 0;
+	if (amount > 0) dir = 1;
+	if (amount < 0) dir = -1;
+	stepper.startMove(1000000 * dir);
+}

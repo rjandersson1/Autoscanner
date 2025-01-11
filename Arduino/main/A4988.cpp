@@ -120,3 +120,4 @@ void A4988::cycleMicrostepMode() {
 short A4988::getMicrostep() {
     return microsteps;
 }
+
