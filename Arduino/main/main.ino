@@ -177,57 +177,75 @@ void dynamicMove() {
 
 
 #define WINDOW_SIZE 5  // Number of samples to average
-// Moves to current poti defined position.
-void dynamicPosition() {
-	int mapVal = 400;
-	int delayTime = 4096;
-	int offset = 0;
-	int threshold = 2;  // Threshold to filter small changes (adjust as needed)
-	int readings[WINDOW_SIZE] = {0};  // Array to store recent readings
-	int index = 0;  // Index for circular buffer
-	int sum = 0;    // Sum of readings in the window
-	int average = 0; // Averaged potentiometer value
+#define INITIAL_DELAY 8096*2  // Initial delay in microseconds
+#define MIN_DELAY 1       // Minimum delay to cap the speed
+#define RAMP_PERIOD 25000  // 0.2 seconds in microseconds
 
-    poti.setMap(-mapVal, mapVal);  // Set the mapping range for the potentiometer
-    int currentPosition = 0;  // Variable to track the current stepper position
-    int targetPosition = 0;   // Variable to store target position
-	// stepper.setRPM((16 / stepper.getMicrostep()) * 10);
-	stepper.setRPM(100);
-	stepper.setMicrostep(16);
+void dynamicPosition() {
+    int mapVal = 400;
+    int delayTime = INITIAL_DELAY;
+    int offset = 0;
+    int threshold = 2;  // Threshold to filter small changes
+    int readings[WINDOW_SIZE] = {0};
+    int index = 0;
+    int sum = 0;
+    int average = 0;
+    unsigned long thresholdStartTime = 0;
+    bool inThreshold = false;
+
+    poti.setMap(-mapVal, mapVal);
+    int currentPosition = 0;
+    int targetPosition = 0;
+    
+    stepper.setRPM(100);
+    stepper.setMicrostep(16);
 
     while (buttonC.state) {  // Loop while the button is pressed
-        buttonC.read();  // Update the button state
-		buttonA.read();
-        int newReading = poti.getMap();  // Get the mapped potentiometer value
-		stepper.setRPM(buttonRPM);
-        
+        buttonC.read();
+        buttonA.read();
+        int newReading = poti.getMap();
+        stepper.setRPM(buttonRPM);
+
         // Update moving average
-        sum -= readings[index];         // Subtract the oldest reading
-        readings[index] = newReading;   // Store new reading
-        sum += newReading;              // Add new reading to sum
-        index = (index + 1) % WINDOW_SIZE;  // Circular buffer index
-        average = sum / WINDOW_SIZE;    // Calculate average
+        sum -= readings[index];
+        readings[index] = newReading;
+        sum += newReading;
+        index = (index + 1) % WINDOW_SIZE;
+        average = sum / WINDOW_SIZE;
 
         // Only update the target position if the change exceeds the threshold
         if (abs(average - targetPosition) > threshold) {
             targetPosition = average;
         }
 
-        // Handle constant move at edge of poti
+        // Check if we are in the threshold range
         if (abs(newReading) > mapVal * 0.99) {
-			offset = 0; // reset offset count
-            if (targetPosition > 1) offset += 1; // start move right
-            if (targetPosition < 1) offset -= 1; // start move left
-			delayMicroseconds(delayTime); // delay to reduce RPM
+            if (!inThreshold) {
+                // Just entered threshold range
+                inThreshold = true;
+                thresholdStartTime = micros();  // Record start time
+                delayTime = INITIAL_DELAY;      // Reset delay
+            }
+
+            // Calculate how much time has passed
+            unsigned long elapsedTime = micros() - thresholdStartTime;
+            if (elapsedTime >= RAMP_PERIOD) {
+                // Ramp up speed by halving the delay time
+                delayTime = max(delayTime / 1.05, MIN_DELAY);
+                thresholdStartTime += RAMP_PERIOD;  // Update the start time for next period
+            }
+
+            offset = (targetPosition > 1) ? 1 : -1;  // Determine direction
+            delayMicroseconds(delayTime);            // Apply delay
         } else {
+            // Reset when out of threshold
+            inThreshold = false;
             offset = 0;
         }
 
-        
-        int stepsToMove = targetPosition + offset - currentPosition;  // Calculate steps to move
-		
-        stepper.move(stepsToMove);  // Move stepper by the calculated steps
-        currentPosition = targetPosition;  // Update the current position
+        int stepsToMove = targetPosition + offset - currentPosition;
+        stepper.move(stepsToMove);
+        currentPosition = targetPosition;
     }
 }
 
