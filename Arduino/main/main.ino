@@ -45,12 +45,14 @@
 
 #define TEMP_AMOUNT 10 // amount to change RPM by
 
-#define FUN_A1 updateRPM((-TEMP_AMOUNT))
-#define FUN_A2 
+float buttonRPM = 64;
+
+#define FUN_A1 buttonRPM = buttonRPM*2; Serial.println(buttonRPM)
+#define FUN_A2 buttonRPM = buttonRPM/2; Serial.println(buttonRPM)
 #define FUN_A3 
 #define FUN_AH 
 #define TIME_AH 1000
-#define TIME_A 0
+#define TIME_A 500
 
 
 #define FUN_B1 stepper.cycleMicrostepMode()
@@ -175,12 +177,12 @@ void dynamicMove() {
 
 
 #define WINDOW_SIZE 5  // Number of samples to average
-
 // Moves to current poti defined position.
 void dynamicPosition() {
 	int mapVal = 400;
+	int delayTime = 4096;
 	int offset = 0;
-	int threshold = 5;  // Threshold to filter small changes (adjust as needed)
+	int threshold = 2;  // Threshold to filter small changes (adjust as needed)
 	int readings[WINDOW_SIZE] = {0};  // Array to store recent readings
 	int index = 0;  // Index for circular buffer
 	int sum = 0;    // Sum of readings in the window
@@ -190,11 +192,14 @@ void dynamicPosition() {
     int currentPosition = 0;  // Variable to track the current stepper position
     int targetPosition = 0;   // Variable to store target position
 	// stepper.setRPM((16 / stepper.getMicrostep()) * 10);
-	stepper.setRPM(500);
+	stepper.setRPM(100);
+	stepper.setMicrostep(16);
 
     while (buttonC.state) {  // Loop while the button is pressed
         buttonC.read();  // Update the button state
+		buttonA.read();
         int newReading = poti.getMap();  // Get the mapped potentiometer value
+		stepper.setRPM(buttonRPM);
         
         // Update moving average
         sum -= readings[index];         // Subtract the oldest reading
@@ -208,17 +213,20 @@ void dynamicPosition() {
             targetPosition = average;
         }
 
-        // Handle offset adjustment at the range limits
-        if (abs(targetPosition) > mapVal * 0.99) {
-            if (targetPosition > 1) offset += 1;
-            if (targetPosition < 1) offset -= 1;
+        // Handle constant move at edge of poti
+        if (abs(newReading) > mapVal * 0.99) {
+			offset = 0; // reset offset count
+            if (targetPosition > 1) offset += 1; // start move right
+            if (targetPosition < 1) offset -= 1; // start move left
+			delayMicroseconds(delayTime); // delay to reduce RPM
         } else {
             offset = 0;
         }
+
         
         int stepsToMove = targetPosition + offset - currentPosition;  // Calculate steps to move
+		
         stepper.move(stepsToMove);  // Move stepper by the calculated steps
-        
         currentPosition = targetPosition;  // Update the current position
     }
 }
@@ -234,12 +242,6 @@ void updateRPM(int amount) {
 	if (amount < 0) dir = -1;
 	stepper.startMove(1000000 * dir);
 }
-// // Temp function to read a val from poti.
-// void changeUpdateDelay() {
-// 	poti.setMap(0,50000);
-// 	updateDelay = round(poti.getMap());
-// 	Serial.print("delay [uS] = ");
-// 	Serial.println(updateDelay);
-// }
+
 
 
