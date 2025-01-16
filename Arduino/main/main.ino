@@ -47,15 +47,15 @@
 
 float buttonRPM = 64;
 
-#define FUN_A1 buttonRPM = buttonRPM*2; Serial.println(buttonRPM)
-#define FUN_A2 buttonRPM = buttonRPM/2; Serial.println(buttonRPM)
+#define FUN_A1 scanner.dynamicMove()
+#define FUN_A2 
 #define FUN_A3 
 #define FUN_AH 
 #define TIME_AH 1000
-#define TIME_A 500
+#define TIME_A 0
 
 
-#define FUN_B1 stepper.cycleMicrostepMode()
+#define FUN_B1 fastMove()
 #define FUN_B2 
 #define FUN_B3 
 #define FUN_BH stepper.cycleMicrostepMode()
@@ -64,7 +64,7 @@ float buttonRPM = 64;
 
 #define FUN_C_TOGGLED 
 #define FUN_C_WHILEON 
-#define FUN_C_ON dynamicPosition()
+#define FUN_C_ON 
 int updateDelay = 100; // [uS]
 #define FUN_C_OFF 
 
@@ -262,4 +262,8 @@ void updateRPM(int amount) {
 }
 
 
-
+void fastMove() {
+	stepper.setMicrostep(1);
+	stepper.setRPM(750);
+	stepper.rotate(4*1280);
+}
