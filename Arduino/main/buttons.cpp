@@ -46,7 +46,8 @@ float Poti::getFloat() {
 
 // Returns custom mapping
 float Poti::getMap() {
-	float value = mapFloat(analogRead(pin), min_value, max_value, mapMin, mapMax);
+	// float value = mapFloat(analogRead(pin), min_value, max_value, mapMin, mapMax);
+	float value = map(analogRead(pin), min_value, max_value, mapMin, mapMax);
 	return value;
 }
 
