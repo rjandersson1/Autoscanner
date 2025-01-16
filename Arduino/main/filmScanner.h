@@ -38,6 +38,7 @@ public:
     void startScan();
     void stopScan();
     void dynamicMove();
+    void dynamicPosition(int mapVal = 400, int initialDelay = 16192, int rampTime = 25000, int microstep = 16, int threshold = 2, int window = 5);
 
 
 
