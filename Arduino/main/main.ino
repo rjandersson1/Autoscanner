@@ -43,31 +43,25 @@
 
 // ===================== Button Callback Definition =================//
 
-#define TEMP_AMOUNT 10 // amount to change RPM by
-
-float buttonRPM = 64;
-
 #define FUN_A1 scanner.dynamicMove()
 #define FUN_A2 
 #define FUN_A3 
 #define FUN_AH 
-#define TIME_AH 1000
-#define TIME_A 0
+#define TIME_AH 1000    // Hold time [ms]
+#define TIME_A 0        // Multiclick time [ms]
 
-
-#define FUN_B1 fastMove()
+#define FUN_B1
 #define FUN_B2 
 #define FUN_B3 
 #define FUN_BH stepper.cycleMicrostepMode()
-#define TIME_BH 500
-#define TIME_B 0
+#define TIME_BH 1000    // Hold time [ms]
+#define TIME_B 0        // Multiclick time [ms]
 
 #define FUN_C_TOGGLED 
 #define FUN_C_WHILEON 
+#define FUN_C_WHILEOFF
 #define FUN_C_ON 
-int updateDelay = 100; // [uS]
 #define FUN_C_OFF 
-
 
 // ====================== Object Definition ======================== //
 
@@ -142,128 +136,4 @@ void setupStepper() {
 	stepper.setSpeedProfile(stepper.LINEAR_SPEED, MOTOR_ACCEL, MOTOR_DECEL); // set acceleration profile
 	stepper.setMicrostep(1);
 	stepper.enable();
-}
-
-int prevUpdateValue = 0;  // Store the last value at which updateRPM was called
-int newRPM2 = 0;
-int prevRPM2 = 0;
-void dynamicMove() {
-	poti.setMap(-50, 50);
-	prevRPM2 = newRPM2;
-	newRPM2 = poti.getMap();
-	// stepper.setMicrostep(8);
-	stepper.setRPM(0);
-	Serial.println(stepper.getMicrostep());
-	unsigned lastUpdate = micros();
-
-	while (buttonC.state) {
-		prevRPM2 = newRPM2;
-		newRPM2 = int(poti.getMap());
-
-		// Check if the change in RPM is at least 10
-		if (abs(newRPM2 - prevUpdateValue) >= 10) {
-			updateRPM(newRPM2 / 10);
-			prevUpdateValue = newRPM2;  // Update the last update value
-		}
-
-		unsigned wait_time_micros = stepper.nextAction();
-
-		buttonA.read();
-		buttonB.read();
-		buttonC.read();
-	}
-}
-
-
-
-#define WINDOW_SIZE 5  // Number of samples to average
-#define INITIAL_DELAY 8096*2  // Initial delay in microseconds
-#define MIN_DELAY 1       // Minimum delay to cap the speed
-#define RAMP_PERIOD 25000  // 0.2 seconds in microseconds
-
-void dynamicPosition() {
-    int mapVal = 400;
-    int delayTime = INITIAL_DELAY;
-    int offset = 0;
-    int threshold = 2;  // Threshold to filter small changes
-    int readings[WINDOW_SIZE] = {0};
-    int index = 0;
-    int sum = 0;
-    int average = 0;
-    unsigned long thresholdStartTime = 0;
-    bool inThreshold = false;
-
-    poti.setMap(-mapVal, mapVal);
-    int currentPosition = 0;
-    int targetPosition = 0;
-    
-    stepper.setRPM(100);
-    stepper.setMicrostep(16);
-
-    while (buttonC.state) {  // Loop while the button is pressed
-        buttonC.read();
-        buttonA.read();
-        int newReading = poti.getMap();
-        stepper.setRPM(buttonRPM);
-
-        // Update moving average
-        sum -= readings[index];
-        readings[index] = newReading;
-        sum += newReading;
-        index = (index + 1) % WINDOW_SIZE;
-        average = sum / WINDOW_SIZE;
-
-        // Only update the target position if the change exceeds the threshold
-        if (abs(average - targetPosition) > threshold) {
-            targetPosition = average;
-        }
-
-        // Check if we are in the threshold range
-        if (abs(newReading) > mapVal * 0.99) {
-            if (!inThreshold) {
-                // Just entered threshold range
-                inThreshold = true;
-                thresholdStartTime = micros();  // Record start time
-                delayTime = INITIAL_DELAY;      // Reset delay
-            }
-
-            // Calculate how much time has passed
-            unsigned long elapsedTime = micros() - thresholdStartTime;
-            if (elapsedTime >= RAMP_PERIOD) {
-                // Ramp up speed by halving the delay time
-                delayTime = max(delayTime / 1.05, MIN_DELAY);
-                thresholdStartTime += RAMP_PERIOD;  // Update the start time for next period
-            }
-
-            offset = (targetPosition > 1) ? 1 : -1;  // Determine direction
-            delayMicroseconds(delayTime);            // Apply delay
-        } else {
-            // Reset when out of threshold
-            inThreshold = false;
-            offset = 0;
-        }
-
-        int stepsToMove = targetPosition + offset - currentPosition;
-        stepper.move(stepsToMove);
-        currentPosition = targetPosition;
-    }
-}
-
-int prevRPM = 0;
-int newRPM = 0;
-void updateRPM(int amount) {
-	stepper.enable();
-	// Serial.println(amount);
-	stepper.setRPM(abs(5*amount));
-	int dir = 0;
-	if (amount > 0) dir = 1;
-	if (amount < 0) dir = -1;
-	stepper.startMove(1000000 * dir);
-}
-
-
-void fastMove() {
-	stepper.setMicrostep(1);
-	stepper.setRPM(750);
-	stepper.rotate(4*1280);
 }
