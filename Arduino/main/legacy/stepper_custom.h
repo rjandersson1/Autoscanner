@@ -61,72 +61,85 @@ Constructor:
     // Basic constructor for motor setup
 - Stepper(int stepPin, int dirPin, int enablePin, int ms1Pin, int ms2Pin, int ms3Pin, int stepsPerRevolution)
     // Constructor with microstepping configuration
+
+
+
+PinDef:
+
+
 */
 
-
-
-// Put struct definition here
 class Stepper {
 
-private:
+public:
+    // Constructor  declaration (stepPin, dirPin, enablePin, stepsPerRevolution)
+    Stepper(int stepPin, int dirPin, int enablePin, int ms1Pin, int ms2Pin, int ms3Pin, int resetPin, int sleepPin, int fullStepsPerRevolution);
+    void setup();
+
+    int stepsPerRevolution; // Steps for a full motor revolution
+    int microstepMode;      // Microstepping mode (1, 2, 4, 8, etc.)
+    int stepDelay;
+    int fullStepsPerRevolution = 200;
+    float degreesPerStep;
+    float stepsPerDegree;
+    
+    // Microstepping
+    void setMicrostepMode(int mode);
+    void cycleMicrostepMode();
+
+    // Motor control
+    void enableMotor();
+    void disableMotor();
+    void setDirection();
+    void resetMotor();
+    void sleepMotor();
+    void swapDirection();
+
+    // Movement
+    void moveStep();
+    void step(float dt); 
+    void moveSteps(int steps);
+    void moveToDegree(float degree);
+    void moveToPercentage(float percentage);
+    void moveForwardPct(float percentage);
+    void setTargetDirection(int target);
+
+    // Utility 
+    long getCurrentStep() const;
+    void setCurrentStep(long step);
+    void setSpeed(float RPS);
+    void zero();
+    void moveSmoothed(float targetAngle);
+    
+
+    // Debugging
+    void printStatus();
 
     // Motor control pins
     int stepPin;     // Pin connected to the step signal
     int dirPin;      // Pin connected to the direction control
     int enablePin;   // Pin to enable/disable the motor driver
-    int resetPin;
-    int sleepPin;
-
+    int resetPin;    // Pin for reset
+    int sleepPin;    // Pin to control sleep mode
 
     // Microstepping control pins
     int ms1Pin;      // Microstepping pin 1
     int ms2Pin;      // Microstepping pin 2
     int ms3Pin;      // Microstepping pin 3
 
-    // Motor States
+    // Motor states
     bool isEnabled;         // Current enabled/disabled state
-    // bool isMoving;
-    int direction;       // Current rotation direction (0 for stationary)
-    long currentStep;       // Current step count position
-    long targetStep;        // Target step position for movement
+    int direction;          // Current rotation direction (1 for CW, -1 for CCW)
     float stepAngle;        // Step angle in degrees
-    
 
+    // Motor properties
+    long currentStep;       // Current step count
+    long targetStep;        // target step count
 
-    // Motor specifications and state
-    // float stepAngle;        // Step angle in degrees (360 / stepsPerRevolution)
+    float velocity;
+    float acceleration;
 
-    // Timing and speed
-    // int stepDelay;          // Delay between steps in microseconds (speed control)
-    // unsigned long lastStepTime; // Last step timestamp for precise timing
-
-
-
-
-
-public:
-    int stepsPerRevolution; // Number of steps for a full revolution
-    int microstepMode;         // microstepping mode (1,2,4,8...)
-    // Constructor  declaration (stepPin, dirPin, enablePin, stepsPerRevolution)
-    Stepper(int stepPin, int dirPin, int enablePin, int ms1Pin, int ms2Pin, int ms3Pin, int resetPin, int sleepPin, int stepsPerRevolution);
-    // Stepper(int stepPin, int dirPin, int enablePin); // Overloaded constructor
-
-    // Method declarations
-
-    // Set microstepping mode (1, 2, 4, 8, 16)
-    void setMicrostepMode(int mode);
-
-
-    // void initalize();
-    // void enableMotor();
-    // void disableMotor();
-    int getStepsPerRevolution() const;
-    void moveForwardPct(float percentage);
-    void moveStep(int stepDelay);
-
-    // Method to move the motor to a specific percentage around 360°
-	void moveToPercentage(float percentage);
-
+private:
 };
 
 

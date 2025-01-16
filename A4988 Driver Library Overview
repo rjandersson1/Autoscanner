@@ -1,0 +1,55 @@
+BasicStepperDriver Class
+This is a generic stepper motor driver class that provides core functionalities:
+
+1. Initialization and Configuration
+   - begin(float rpm=60, short microsteps=1): Initializes the motor pins and configures the motor RPM and microstepping.
+   - setRPM(float rpm): Sets the target RPM for the motor.
+   - setMicrostep(short microsteps): Configures the microstepping level.
+
+2. Speed Profiles
+   - setSpeedProfile(Mode mode, short accel=1000, short decel=1000): Configures acceleration and deceleration in steps per second squared.
+   - getSpeedProfile(): Retrieves the current speed profile.
+
+3. Motor Movement
+   - move(long steps): Moves the motor a given number of steps (positive for forward, negative for reverse).
+   - rotate(long deg): Rotates the motor a given number of degrees (integer precision).
+   - rotate(double deg): Rotates the motor with sub-degree precision.
+   - startMove(long steps, long time=0): Starts a movement over a given number of steps.
+   - startRotate(long deg | double deg): Starts a rotational movement.
+   - move() is blocking, startMove() is non blocking and needs to call nextAction each loop.
+
+4. Control and State
+   - enable(), disable(): Enables or disables the motor to allow free movement or hold its position.
+   - stop(): Stops the motor immediately and returns the remaining steps.
+   - startBrake(): Initiates braking and stops the motor.
+   - nextAction(): Performs the next step in a non-blocking move and returns the time until the next action.
+   - getCurrentState(): Retrieves the current state of movement (stopped, accelerating, cruising, decelerating).
+
+5. Utility Functions
+   - calcStepsForRotation(long deg | double deg): Calculates the steps needed to rotate a specified angle.
+   - getTimeForMove(long steps): Estimates the time required to complete a movement.
+   - getStepsCompleted(), getStepsRemaining(): Retrieves the completed or remaining steps for the current move.
+
+---
+
+A4988 Class
+This is a subclass of BasicStepperDriver, tailored for the A4988 stepper motor driver:
+
+1. Initialization
+   - Overloaded constructors for different wiring configurations:
+     - Only DIR and STEP pins connected.
+     - Adding an ENABLE pin.
+     - Fully wired with microstepping pins (MS1, MS2, MS3).
+
+2. Microstepping
+   - setMicrostep(short microsteps): Configures the microstepping mode (1:1 to 1:16).
+   - getMicrostepTable(), getMicrostepTableSize(): Accesses the microstep resolution table.
+   - getMaxMicrostep(): Retrieves the maximum supported microstep level.
+
+3. Control
+   - begin(float rpm, short microsteps): Initializes pins and configurations for motor operation.
+   - Supports microstepping resolution through MS1, MS2, and MS3 pins.
+
+Key Features and Differences
+- The BasicStepperDriver provides the foundational operations for any generic stepper motor, including movement, speed control, and acceleration profiles.
+- The A4988 adds specific support for the A4988 driver, including microstepping resolution control via hardware pins.

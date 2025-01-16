@@ -24,6 +24,14 @@ Phase Resistance: 48Ω
 Holding Torque: Approximately 22 N·cm
 Lead Wires: 4 (indicating a bipolar configuration)
 
+Speeds:
+Constant speed:
+@9v     ~500rpm
+@20v    ~750rpm
+
+@Max Accel (16000 ~= 2^14):
+@9v, full  ~1250rpm (power cutoff from USB C, inconsistent above 1350rpm)
+
 =================== A4982 =====================
 A4982 Wiring as follows
 
