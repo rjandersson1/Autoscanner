@@ -298,7 +298,6 @@ toggleButton::toggleButton(int pin)
 	setup(pin);
 }
 
-
 void toggleButton::setup(int pin) {
 	pinMode(pin, INPUT_PULLUP);
 }
@@ -327,15 +326,22 @@ void toggleButton::onToggle(void (*callback())) {
 	onToggleCallback = callback;
 }
 
-// Callback for when button is toggled ON
+// Callback for when button is ON
 void toggleButton::whileOn(void (*callback())) {
 	whileOnCallback = callback;
 }
 
+// Callback for when button is OFF
+void toggleButton::whileOff(void (*callback())) {
+	whileOffCallback= callback;
+}
+
+// Callback for when button is toggled ON
 void toggleButton::toggledOn(void (*callback())) {
 	toggledOnCallback = callback;
 }
 
+// Callback for when button is toggled OFF
 void toggleButton::toggledOff(void (*callback())) {
 	toggledOffCallback = callback;
 }
