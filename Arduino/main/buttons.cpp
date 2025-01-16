@@ -375,3 +375,12 @@ void Timer::endMillis() {
     Serial.print(dT);
     Serial.println(" milliseconds");
 }
+
+// Measures the runtime of a function (in microseconds)
+void Timer::test(void (*func )() = nullptr) {
+    unsigned long startTime = micros();
+    func();  // Call the function passed as a pointer
+    unsigned long endTime = micros();
+    unsigned long dT = endTime - startTime;
+    Serial.println(dT);
+}
