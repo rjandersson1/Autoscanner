@@ -1,9 +1,12 @@
 #ifndef FILMSCANNER_H
 #define FILMSCANNER_H
 
+
 #include "A4988.h"      // Stepper motor driver
-// #include <IRremote.h>  // IR control for camera
 #include "Buttons.h"    // Button handling
+
+
+// extern IRsend ir;
 
 class filmScanner {
 
@@ -18,7 +21,6 @@ public:
     Button &buttonB;
     toggleButton &buttonC;
     Poti &poti;
-    // IRsend &ir;
 
 
     // Properties
@@ -39,7 +41,6 @@ public:
     void stopScan();
     void dynamicMove();
     void dynamicPosition(int mapVal = 400, int initialDelay = 16192, int rampTime = 25000, int microstep = 16, int threshold = 2, int window = 5);
-
 
 
 private:

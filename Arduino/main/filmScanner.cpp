@@ -1,7 +1,11 @@
+#include <IRremote.h>
 #include "buttons.h"
 #include <Arduino.h>
 #include "FilmScanner.h"
 
+
+#define PIN_IR   9   // BR -> IR LED
+IRsend ir(PIN_IR); // IR object
 
 // Constructor
 filmScanner::filmScanner(A4988 &stepper, Button &buttonA, Button &buttonB, toggleButton &buttonC, Poti &poti)
@@ -16,16 +20,18 @@ void filmScanner::setup() {
 
 // Sends IR signal 3 times
 void filmScanner::takePhoto() {
-    // for (int i = 0; i < 3; i++) {
-    //     ir.sendSony(0xB4B8F, 20); // Send Sony 12-bit command
-    //     delay(40);
-    // }
+    Serial.println("send");
+    for (int i = 0; i < 3; i++) {
+        ir.sendSony(0xB4B8F, 20); // Send Sony 12-bit command
+        delay(40);
+        Serial.println("s");
+    }
 }
 
-void filmScanner::moveFrame() {
-    float targetDegrees = frameWidth / mmPerDegree; // [mm / (mm/deg)] = [deg]
-    stepper.rotate(targetDegrees);
-}
+// void filmScanner::moveFrame() {
+//     float targetDegrees = frameWidth / mmPerDegree; // [mm / (mm/deg)] = [deg]
+//     stepper.rotate(targetDegrees);
+// }
 
 void filmScanner::setOutputRatio(float diameter, float ratio) {
     shaftDiameter = diameter;
@@ -110,4 +116,18 @@ void filmScanner::dynamicMove() {
         stepper.move(dir);
         delayMicroseconds(abs(delayTime));
     }
+}
+
+void filmScanner::moveFrame() {
+    int frameWidth = 300;
+    stepper.setMicrostep(16);
+    stepper.setRPM(500);
+    stepper.move(frameWidth);
+    delay(500);
+    takePhoto();
+    delay(500);
+    stepper.move(frameWidth);
+    delay(500);
+    takePhoto();
+    Serial.println("done");
 }
