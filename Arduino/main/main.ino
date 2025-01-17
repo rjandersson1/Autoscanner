@@ -19,8 +19,7 @@
 
 // ======================== Libraries =========================== //
 #include <Arduino.h>
-#include <IRremote.h>
-// #include "stepper.h"
+// #include <IRremote.h>
 #include "buttons.h"
 #include "filmScanner.h"
 
@@ -30,8 +29,8 @@
 #define PIN_EN   12  // GR -> EN
 #define PIN_DIR  11  // OR -> DIR
 #define PIN_STEP 10  // RD -> STEP
-#define PIN_IR   9   // BR -> IR LED
-#define IR_SEND_PIN PIN_IR // Set the IR sending pin to Pin 9
+// #define PIN_IR   9   // BR -> IR LED
+// #define IR_SEND_PIN PIN_IR // Set the IR sending pin to Pin 9
 #define PIN_SLP  8   // BR -> SLP
 #define PIN_RST  7   // BK -> RST
 #define PIN_MS3  6   // WH -> MS3
@@ -43,21 +42,21 @@
 
 // ===================== Button Callback Definition =================//
 
-#define FUN_A1 scanner.dynamicMove()
+#define FUN_A1 scanner.moveFrame();
 #define FUN_A2 
 #define FUN_A3 
 #define FUN_AH 
 #define TIME_AH 1000    // Hold time [ms]
 #define TIME_A 0        // Multiclick time [ms]
 
-#define FUN_B1
+#define FUN_B1 scanner.takePhoto();
 #define FUN_B2 
 #define FUN_B3 
-#define FUN_BH stepper.cycleMicrostepMode()
+#define FUN_BH 
 #define TIME_BH 1000    // Hold time [ms]
 #define TIME_B 0        // Multiclick time [ms]
 
-#define FUN_C_TOGGLED 
+#define FUN_C_TOGGLED test()
 #define FUN_C_WHILEON 
 #define FUN_C_WHILEOFF
 #define FUN_C_ON 
@@ -70,7 +69,7 @@ Button buttonA(PIN_BTN_A);
 Button buttonB(PIN_BTN_B);
 toggleButton buttonC(PIN_BTN_C);
 Poti poti(PIN_POTI, 0, 1023);
-IRsend ir(IR_SEND_PIN); // IR object
+// IRsend ir(IR_SEND_PIN); // IR object
 Timer timer(); // timer object
 
 // Stepper
@@ -92,6 +91,8 @@ void setup() {
 	setupButtons();
 	setupStepper();
 	Serial.println("init...");
+  stepper.disable();
+  pinMode(9, OUTPUT);
 }
 
 void loop() {
@@ -136,4 +137,16 @@ void setupStepper() {
 	stepper.setSpeedProfile(stepper.LINEAR_SPEED, MOTOR_ACCEL, MOTOR_DECEL); // set acceleration profile
 	stepper.setMicrostep(1);
 	stepper.enable();
+}
+
+void test() {
+  Serial.println("testing...");
+  
+  while (buttonC.state) {
+    buttonC.read();
+    digitalWrite(9, HIGH);
+    delay(100);
+  }
+  digitalWrite(9, LOW);
+  Serial.println("off");
 }
