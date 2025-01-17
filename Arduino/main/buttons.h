@@ -193,6 +193,9 @@ class Timer {
 
         // Ends the timer, calculates dT in milliseconds, and prints it
         void endMillis();
+
+		// Measures the runtime of a function
+		void test(void (*func )() = nullptr);
 };
 
 
