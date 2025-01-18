@@ -42,21 +42,22 @@
 
 // ===================== Button Callback Definition =================//
 
-#define FUN_A1 scanner.moveFrame();
+//scanner.setFramewidth();
+#define FUN_A1 scanner.setFramewidth()
 #define FUN_A2 
 #define FUN_A3 
 #define FUN_AH 
 #define TIME_AH 1000    // Hold time [ms]
 #define TIME_A 0        // Multiclick time [ms]
 
-#define FUN_B1 scanner.takePhoto();
+#define FUN_B1 scanner.scanFrame();
 #define FUN_B2 
 #define FUN_B3 
 #define FUN_BH 
 #define TIME_BH 1000    // Hold time [ms]
 #define TIME_B 0        // Multiclick time [ms]
 
-#define FUN_C_TOGGLED test()
+#define FUN_C_TOGGLED 
 #define FUN_C_WHILEON 
 #define FUN_C_WHILEOFF
 #define FUN_C_ON 
@@ -77,7 +78,7 @@ Timer timer(); // timer object
 #define MOTOR_STEPS 200 // default steps/rev
 #define RPM 1250 // cruise speed RPM
 #define MOTOR_ACCEL 16000 // [STEP/s]
-#define MOTOR_DECEL 9999999 // [STEP/s]
+#define MOTOR_DECEL 3000 // [STEP/s]
 #define MICROSTEPS 16 // Microstep mode (hardwired)
 A4988 stepper(MOTOR_STEPS, PIN_DIR, PIN_STEP, PIN_EN, PIN_MS1, PIN_MS2, PIN_MS3);
 
@@ -91,8 +92,6 @@ void setup() {
 	setupButtons();
 	setupStepper();
 	Serial.println("init...");
-  stepper.disable();
-  pinMode(9, OUTPUT);
 }
 
 void loop() {
@@ -136,17 +135,5 @@ void setupStepper() {
 	stepper.setEnableActiveState(LOW); // Enabled when PIN_EN LOW
 	stepper.setSpeedProfile(stepper.LINEAR_SPEED, MOTOR_ACCEL, MOTOR_DECEL); // set acceleration profile
 	stepper.setMicrostep(1);
-	stepper.enable();
-}
-
-void test() {
-  Serial.println("testing...");
-  
-  while (buttonC.state) {
-    buttonC.read();
-    digitalWrite(9, HIGH);
-    delay(100);
-  }
-  digitalWrite(9, LOW);
-  Serial.println("off");
+	stepper.disable();
 }
