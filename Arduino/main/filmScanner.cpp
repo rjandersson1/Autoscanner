@@ -20,12 +20,17 @@ void filmScanner::setup() {
 
 // Sends IR signal 3 times
 void filmScanner::takePhoto() {
-    Serial.println("send");
-    for (int i = 0; i < 3; i++) {
-        ir.sendSony(0xB4B8F, 20); // Send Sony 12-bit command
-        delay(40);
-        Serial.println("s");
-    }
+    Serial.println("snap");
+    // for (int i = 0; i < 3; i++) {
+    //     ir.sendSony(0xB4B8F, 20); // Send Sony 12-bit command
+    //     delay(40);
+    //     Serial.println("s");
+    // }
+    stepper.disable();
+    delay(100);
+    stepper.enable();
+    delay(50);
+    stepper.disable();
 }
 
 // void filmScanner::moveFrame() {
@@ -119,15 +124,114 @@ void filmScanner::dynamicMove() {
 }
 
 void filmScanner::moveFrame() {
-    int frameWidth = 300;
+    stepper.enable();
+    float degreesToMove = frameWidth / mmPerDegree;
     stepper.setMicrostep(16);
-    stepper.setRPM(500);
-    stepper.move(frameWidth);
-    delay(500);
-    takePhoto();
-    delay(500);
-    stepper.move(frameWidth);
-    delay(500);
-    takePhoto();
-    Serial.println("done");
+    stepper.setRPM(1000);
+    stepper.rotate(degreesToMove);
+    stepper.disable();
+}
+
+void filmScanner::setFramewidth() {
+    stepper.enable();
+    // Init vars
+    int mapVal = 400;
+    poti.setMap(-mapVal, mapVal);
+    int microstep = 16;
+    stepper.setMicrostep(microstep);
+    stepper.setRPM(100);
+    int currentPosition = poti.getMap();
+    int targetPosition = currentPosition;
+    int initialDelay = 16192;
+    int rampTime = 25000;
+    int threshold = 2;
+    int window = 5;
+    int offset = 0;             // for moving
+    int delayTime = initialDelay;
+    int readings[window] = {0}; // Collection of past readings
+    int index = 0;              // index of readings
+    int sum = 0;                
+    int average = currentPosition;            // moving average
+    unsigned long moveStartTime = 0;
+    bool isMoving = false;
+
+    // Update readings vector to current position
+    sum = 0; // Reset sum
+    for (unsigned int i = 0; i < window; i++) {
+        readings[i] = currentPosition;
+        sum += currentPosition; // Add currentPosition to sum
+    }
+    average = sum / window; // Set initial average correctly
+
+    // Step counting
+    int stepOffset = 0;
+
+    // Loop
+    buttonC.state = 1;
+    while (buttonC.state) {
+        buttonC.read();
+        int newReading = poti.getMap();
+        
+        // Update moving average
+        sum -= readings[index]; // erase old reading
+        readings[index] = newReading; // update new reading
+        sum += newReading; // update sum
+        index = (index + 1) % window; // change index
+        average = sum / window; // calculate average
+
+        // Update target position if change exceeds threshold (reduced idle jitter)
+        if (abs(average - targetPosition) > threshold) {
+            targetPosition = average;
+        } 
+        // Check poti to see if at end of range to determine whether to begin move
+        if (abs(newReading) > mapVal * 0.99) {
+            if (!isMoving) {
+                // Start moving
+                isMoving = true;
+                moveStartTime = micros(); // update timestamp
+                delayTime = initialDelay; // reset delay
+            }
+
+            // Calculate time elapsed
+            unsigned long elapsedTime = micros() - moveStartTime;
+            if (elapsedTime > rampTime) {
+                // Half the delay to ramp up speed
+                delayTime = max(delayTime / 1.05, 1);
+                moveStartTime += rampTime;
+            }
+
+            offset = (targetPosition > 0) ? 1 : -1; // Determine direction
+            delayMicroseconds(delayTime);           // apply delay
+            
+        } else {
+            isMoving = false;
+            offset = 0;
+        }
+
+        // Move # of steps
+        int stepsToMove = targetPosition + offset - currentPosition;
+        stepOffset = stepOffset + stepsToMove; // update stepcount
+        stepper.move(stepsToMove);
+        currentPosition = targetPosition;
+    }
+
+    Serial.print("Step offset set to ");
+    Serial.println(stepOffset);
+
+    Serial.print("New framewidth: ");
+    float fullSteps = stepOffset / stepper.getMicrostep(); // divide by microstep mode to get full steps moved
+    float degreeOffset = 360 * (fullSteps / stepper.getSteps()); // divide by steps per revolution to get degrees
+    float mmOffset = degreeOffset * mmPerDegree; // calculate mm traveled with mm per degree constant
+    frameWidth = frameWidth + mmOffset; //update new framewidth
+    Serial.print(degreeOffset);
+    Serial.print("deg  ");
+    Serial.println(frameWidth);
+    stepper.disable();
+}
+
+void filmScanner::scanFrame() {
+    for (unsigned int i = 0; i < 3; i++) {
+        moveFrame();
+        takePhoto();
+    }
 }

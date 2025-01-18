@@ -26,7 +26,7 @@ public:
     // Properties
     float shaftDiameter = 1; // [mm]
     float outputRatio = 0.875; // [-] [TEMP]
-    float mmPerDegree = 1; // [mm]
+    float mmPerDegree = 1; // [mm / deg]
     float frameWidth = 36; // [mm]
     bool scanning;
 
@@ -41,7 +41,8 @@ public:
     void stopScan();
     void dynamicMove();
     void dynamicPosition(int mapVal = 400, int initialDelay = 16192, int rampTime = 25000, int microstep = 16, int threshold = 2, int window = 5);
-
+    void setFramewidth();
+    void scanFrame();
 
 private:
 
