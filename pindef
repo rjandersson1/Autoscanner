@@ -1,21 +1,21 @@
 ========== Pin Definition 27.12.2024 Flims ==========
 
-[pin#, col, func]
-13  YL  --> MS1
-12  GR  --> EN
-11  OR  --> DIR
-10  RD  --> STEP
-09  BR  --> IR LED
-08  BR  --> SLP
-07  BK  --> RST
-06  WH  --> MS3
-05  GY  --> MS2
-04  GY  --> BUTTON A
-03  WH  --> BUTTON B
-02  BK  --> BUTTON C
-A0  RD  --> POTI
-GND BR  --> GND
-5V  RD  --> 5V
+[coord, pin#, col, func]
+X  05  BL  --> MS1
+W  02  WH  --> EN
+V  08  GR  --> DIR
+U  09  YL  --> STEP
+D  10  BL  --> IR LED
+T  03  WH  --> SLP
+S  04  WH  --> RST
+R  06  BL  --> MS3
+O  07  BL  --> MS2
+H  13  YL  --> BUTTON A
+G  12  GR  --> BUTTON B
+F  11  WH  --> BUTTON C
+E  A0  BR  --> POTI
+L  GND BR  --> GND
+M  5V  RD  --> 5V
 
 
 
