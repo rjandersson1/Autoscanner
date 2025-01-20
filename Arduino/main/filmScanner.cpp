@@ -19,18 +19,21 @@ void filmScanner::setup() {
 }
 
 // Sends IR signal 3 times
-void filmScanner::takePhoto() {
+void filmScanner::takePhoto(int speed = 1) {
     Serial.println("snap");
     // for (int i = 0; i < 3; i++) {
     //     ir.sendSony(0xB4B8F, 20); // Send Sony 12-bit command
     //     delay(40);
     //     Serial.println("s");
     // }
-    stepper.disable();
-    delay(100);
-    stepper.enable();
-    delay(50);
-    stepper.disable();
+    for (int i = 0; i < 3; i++) {
+        digitalWrite(PIN_IR, HIGH);
+        delay(50);
+        digitalWrite(PIN_IR, LOW);
+        delay(50);
+        Serial.println("s");
+    }
+    delay(100/speed); // time for shutter to fire
 }
 
 // void filmScanner::moveFrame() {
@@ -123,37 +126,37 @@ void filmScanner::dynamicMove() {
     }
 }
 
-void filmScanner::moveFrame() {
-    stepper.enable();
+void filmScanner::moveFrame(int speed = 1) {
     float degreesToMove = frameWidth / mmPerDegree;
+    stepper.setSpeedProfile(stepper.LINEAR_SPEED, 3300*speed, 3300*speed); // set acceleration profile
+    stepper.setRPM(200*speed);
     stepper.setMicrostep(16);
-    stepper.setRPM(1000);
+    stepper.enable();
     stepper.rotate(degreesToMove);
     stepper.disable();
 }
 
 void filmScanner::setFramewidth() {
-    stepper.enable();
+    stepper.enable(); 
     // Init vars
-    int mapVal = 400;
-    poti.setMap(-mapVal, mapVal);
-    int microstep = 16;
-    stepper.setMicrostep(microstep);
-    stepper.setRPM(100);
-    int currentPosition = poti.getMap();
-    int targetPosition = currentPosition;
-    int initialDelay = 16192;
-    int rampTime = 25000;
-    int threshold = 2;
-    int window = 5;
-    int offset = 0;             // for moving
-    int delayTime = initialDelay;
-    int readings[window] = {0}; // Collection of past readings
-    int index = 0;              // index of readings
-    int sum = 0;                
-    int average = currentPosition;            // moving average
-    unsigned long moveStartTime = 0;
-    bool isMoving = false;
+    int mapVal = 400;                   // Range (steps) of potentiometer
+    poti.setMap(-mapVal, mapVal);       // Apply range
+    stepper.setMicrostep(16);           // Set microstep (smoothest & finest operation)
+    stepper.setRPM(100);                // Set base RPM (excessively slow (<50) --> less responsive)
+    int currentPosition = poti.getMap();    // Set initial position
+    int targetPosition = currentPosition;   // Set initial position
+    int initialDelay = 16192;               // Ramp delay [uS]
+    int rampTime = 25000;                   // Ramp update time [uS]
+    int threshold = 2;                      // Poti moving average delta threshold
+    int window = 5;                         // Moving average window
+    int offset = 0;                         // For moving at end of range
+    int delayTime = initialDelay;           // Set initial ramp delay
+    int readings[window] = {0};             // Init vector collection of past readings
+    int index = 0;                          // Index of readings
+    int sum = 0;                            // Moving average sum
+    int average = currentPosition;          // Moving average
+    unsigned long moveStartTime = 0;        // Timestamp of move begin
+    bool isMoving = false;                  // Bool of move
 
     // Update readings vector to current position
     sum = 0; // Reset sum
@@ -231,7 +234,23 @@ void filmScanner::setFramewidth() {
 
 void filmScanner::scanFrame() {
     for (unsigned int i = 0; i < 3; i++) {
-        moveFrame();
-        takePhoto();
+        moveFrame(1);
+        takePhoto(1);
+    }
+}
+
+void filmScanner::startScanning() {
+    buttonC.state = 1;
+    while (buttonC.state) {
+        buttonA.read();
+        buttonB.read();
+        buttonC.read();
+
+        // Add a speed selection here
+        poti.setMap(1, 5);
+        int speed = poti.getMap();
+
+        moveFrame(speed);
+        takePhoto(speed);
     }
 }

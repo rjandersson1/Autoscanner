@@ -33,10 +33,10 @@ public:
 
     // Methods
     void setOutputRatio(float diameter, float ratio); // Sets mechanical properties of shaft for mm calculations
-    void moveFrame();
+    void moveFrame(int speed = 1);
     void setup();
     void calibrate();
-    void takePhoto();
+    void takePhoto(int speed = 1);
     void startScan();
     void stopScan();
     void dynamicMove();
