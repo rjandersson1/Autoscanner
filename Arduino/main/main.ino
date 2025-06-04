@@ -22,6 +22,7 @@
 #include <SoftwareSerial.h>
 #include "libraries/buttons.h"
 #include "libraries/filmScanner.h"
+#include "libraries/AccelStepper.h"
 #include "libraries/TMC/TMCStepper.h"
 #include "libraries/IRremote/IRremote.h"
 
@@ -79,10 +80,11 @@ IRsend ir(IR_SEND_PIN);
 
 // Stepper motor
 SoftwareSerial tmc_serial(PIN_TMC2209_RX, PIN_TMC2209_TX); // RX, TX
-TMC2209Stepper stepper(&tmc_serial, R_SENSE, DRIVER_ADDRESS);
+TMC2209Stepper driver(&tmc_serial, R_SENSE, DRIVER_ADDRESS); // Create TMC2209 driver object
+AccelStepper motor(AccelStepper::DRIVER, PIN_STEP, PIN_DIR); // Create stepper motor object
 
 // Film scanner
-filmScanner scanner(stepper, buttonA, buttonB, buttonC, poti, ir);
+filmScanner scanner(motor, driver, buttonA, buttonB, buttonC, poti, ir);
 
 // ======================== Main ============================= //
 
@@ -130,11 +132,17 @@ void initButtons() {
 
 // Initializes the TMC2209 stepper driver
 void initStepper() {
-  tmc_serial.begin(115200); // Initialize UART communication
-  stepper.begin();
-  stepper.toff(4);
-  stepper.blank_time(24);
-  stepper.rms_current(100);
-  stepper.microsteps(1);
-  stepper.pwm_autoscale(true);
+    // UART config for TMC2209
+    tmc_serial.begin(115200);
+    driver.begin();
+    driver.toff(4);
+    driver.blank_time(24);
+    driver.rms_current(100);
+    driver.microsteps(1);
+    driver.pwm_autoscale(true);
+
+    // AccelStepper motion setup
+    motor.setMaxSpeed(1000);        // reasonable default
+    motor.setAcceleration(500);     // ramp speed
+    motor.setCurrentPosition(0);    // optional: reset to 0
 }
