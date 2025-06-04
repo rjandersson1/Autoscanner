@@ -15,7 +15,7 @@ class Poti {
 // - add a current velocity property
 public:
 	// Constructor
-	Poti(int pin, int min_value = 0, int max_value = 1023);
+	Poti(int pin, int min_value = 0, int max_value = 1023, int filterWindow = 1);
 
 	// Proprties
 	int pin;
@@ -26,6 +26,10 @@ public:
 	int thresholdMax = max_value; // Analog 0-1023
 	float mapMin = min_value;
 	float mapMax = max_value;
+	int* filterBuffer = nullptr;
+	int filterIndex = 0;
+	int filterSum = 0;
+	int filterWindow = 1; // Default filter window (off)
 
 
 	// Utility functions
@@ -36,6 +40,7 @@ public:
 	float getFloat(); // Value 0.00 to 1.00
 	float getMap(); // Value from custom map
 	float getDegrees();
+	void initFilter(int windowSize = 5); // Initialize filter with a window size
 
 	// Methods
 	void read();

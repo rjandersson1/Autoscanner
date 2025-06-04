@@ -16,12 +16,20 @@ float Poti::mapFloat(float x, float in_min, float in_max, float out_min, float o
 
 // Poti Class Implementation
 void Poti::setup() {
-	// nothing to do
+	initFilter(filterWindow); // Initialize filter with default window size
 }
 
-// Reads current value
+// Reads current value (and filters if window size > 1)
 void Poti::read() {
 	currentValue = analogRead(pin);
+	// Apply filter if window size > 1 && filter initialized.
+	if (filterWindow > 1 && filterBuffer != nullptr) {
+		filterSum -= filterBuffer[filterIndex]; // Remove oldest value from sum
+		filterBuffer[filterIndex] = currentValue; // Add new value to buffer
+		filterSum += currentValue; // Add new value to sum
+		currentValue = filterSum / filterWindow; // Calculate average
+		filterIndex = (filterIndex + 1) % filterWindow; // Update index circularly
+	}
 	// if (currentValue > max_value) currentValue = max_value;
 	// if (currentValue < min_value) currentValue = min_value;
 }
@@ -65,6 +73,28 @@ void Poti::setMap(float inputMin, float inputMax) {
 void Poti::setThresholds(float thresholdMinFloat, float thresholdMaxFloat) {
 	thresholdMin = map(thresholdMinFloat, 0.0, 1.0, 0, 1023);
 	thresholdMax = map(thresholdMaxFloat, 0.0, 1.0, 0, 1023);
+}
+
+// Initalize filter
+void Poti::initFilter(int windowSize) {
+	// Clean up previous filter buffer if it exists
+	if (filterBuffer != nullptr) {
+		delete[] filterBuffer;
+		filterBuffer = nullptr;
+	}
+	// Set filter window size
+	if (windowSize < 1) windowSize = 1; // Ensure minimum window size
+	filterWindow = windowSize;
+	filterBuffer = new int[filterWindow];
+
+	// Initialize filter buffer with current value (prevent initial startup delay)
+	int initialValue = analogRead(pin);
+	filterSum = 0;
+	for (int i = 0; i < filterWindow; i++) {
+		filterBuffer[i] = initialValue;
+		filterSum += initialValue;
+	}
+	filterIndex = 0;
 }
 
 
