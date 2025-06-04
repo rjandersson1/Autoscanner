@@ -3,8 +3,8 @@
 
 
 // Constructor
-filmScanner::filmScanner(TMC2209Stepper &stepper, Button &buttonA, Button &buttonB, toggleButton &buttonC, Poti &poti, IRsend &ir)
-    : stepper(stepper), buttonA(buttonA), buttonB(buttonB), buttonC(buttonC), poti(poti), ir(ir)
+filmScanner::filmScanner(AccelStepper &motor, TMC2209Stepper &driver, Button &buttonA, Button &buttonB, toggleButton &buttonC, Poti &poti, IRsend &ir)
+    : motor(motor), driver(driver), buttonA(buttonA), buttonB(buttonB), buttonC(buttonC), poti(poti), ir(ir)
 {
     setup();
 }
@@ -23,7 +23,7 @@ void filmScanner::takePhoto() {
 
 void filmScanner::moveFrame() {
     float targetDegrees = frameWidth / mmPerDegree; // [mm / (mm/deg)] = [deg]
-    stepper.rotate(targetDegrees);
+    motor.rotate(targetDegrees);
 }
 
 void filmScanner::setOutputRatio(float diameter, float ratio) {
@@ -33,8 +33,15 @@ void filmScanner::setOutputRatio(float diameter, float ratio) {
     mmPerDegree = (3.1415 * shaftDiameter) / (360.0 * outputRatio);
 }
 
-void filmScanner::dynamicPosition(int mapVal = 400, int initialDelay = 16192, int rampTime = 25000, int microstep = 16, int threshold = 2, int window = 5) {
+// Moves film scanner position based on potentiometer input. When at limits, it ramps up to continuous movement.
+void filmScanner::dynamicPosition() {
     // Init vars
+    int mapVal = 400; // Max potentiometer value (+/- steps)
+    int initialDelay = 16192; // Initial delay time in microseconds
+    int rampTime = 25000; // Time in microseconds to ramp up speed
+    int microstep = 1;
+    int threshold = 2; // Threshold for change in position to trigger movement
+    int window = 5; // Number of readings for moving average
     int offset = 0;             // for moving
     int delayTime = initialDelay;
     int readings[window] = {0}; // Collection of past readings
@@ -48,8 +55,9 @@ void filmScanner::dynamicPosition(int mapVal = 400, int initialDelay = 16192, in
 
     // Setup
     poti.setMap(-mapVal, mapVal);
-    stepper.setMicrostep(microstep);
-    stepper.setRPM(100);
+    poti.initFilter(window); // Initialize filter with window size
+    driver.microsteps(microstep);
+    motor.setMaxSpeed(1000);
 
     // Loop
     while (buttonC.state) {
@@ -93,15 +101,19 @@ void filmScanner::dynamicPosition(int mapVal = 400, int initialDelay = 16192, in
 
         // Move # of steps
         int stepsToMove = targetPosition + offset - currentPosition;
-        stepper.move(stepsToMove);
+        motor.moveTo(stepsToMove);
+        while (motor.distanceToGo() != 0) {
+            motor.run();
+        }
         currentPosition = targetPosition;
     }
 }
 
+// Changes stepper speed based on potentiometer value
 void filmScanner::dynamicMove() {
     poti.setMap(0, 16000);
-    stepper.setMicrostep(1);
-    stepper.setRPM(1000);
+    driver.microsteps(1);
+    motor.setMaxSpeed(1000);
     while (buttonC.state) {
         buttonC.read();
         float delayTime = poti.getMap();
@@ -111,34 +123,3 @@ void filmScanner::dynamicMove() {
     }
 }
 
-void filmScanner::rotate(int degrees) {
-
-}
-
-// move stepper at steps/second for x steps
-void filmScanner::moveSteps(int steps, int speed) {
-    // Assumes speed is in microsteps per second (signed: positive = fwd, negative = rev)
-
-    if (speed == 0 || steps == 0) return;
-
-    // How long to run in microseconds:
-    unsigned long durationMicros = abs(steps * 1000000L / speed);
-
-    // Start moving
-    stepper.VACTUAL(speed);
-
-    unsigned long startTime = micros();
-    while ((micros() - startTime) < durationMicros) {
-        // Wait while motor is moving
-    }
-
-    // Stop motor
-    stepper.VACTUAL(0);
-}
-
-void filmScanner::moveMm(float mm, int speed) {
-    // Move a certain distance in mm at a given speed
-    stepepr.
-    float steps = mm / mmPerDegree; // Convert mm to steps
-    moveSteps(steps, speed);
-}
