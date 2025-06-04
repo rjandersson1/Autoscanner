@@ -1,0 +1,46 @@
+#pragma once
+#include "IRremote/IRremote.h"
+#include "TMCStepper/TMCStepper.h"
+#include "Buttons.h"
+
+class filmScanner {
+
+public:
+
+    // Constructor
+    filmScanner(TMC2209Stepper &stepper, Button &buttonA, Button &buttonB, toggleButton &buttonC, Poti &poti, IRsend &ir);
+
+    // Reference Objects
+    TMC2209Stepper &stepper;
+    Button &buttonA;
+    Button &buttonB;
+    toggleButton &buttonC;
+    Poti &poti;
+    IRsend &ir;
+
+
+    // Properties
+    float shaftDiameter = 1; // [mm]
+    float outputRatio = 0.875; // [-] [TEMP]
+    float mmPerDegree = 1; // [mm]
+    float frameWidth = 36; // [mm]
+    bool scanning;
+
+
+    // Methods
+    void setOutputRatio(float diameter, float ratio); // Sets mechanical properties of shaft for mm calculations
+    void moveFrame();
+    void setup();
+    void calibrate();
+    void takePhoto();
+    void startScan();
+    void stopScan();
+    void dynamicMove();
+    void dynamicPosition(int mapVal = 400, int initialDelay = 16192, int rampTime = 25000, int microstep = 16, int threshold = 2, int window = 5);
+
+
+
+private:
+
+
+};
