@@ -1,4 +1,5 @@
 #pragma once
+#include "AccelStepper.h"
 #include "IRremote/IRremote.h"
 #include "TMCStepper/TMCStepper.h"
 #include "Buttons.h"
@@ -8,10 +9,11 @@ class filmScanner {
 public:
 
     // Constructor
-    filmScanner(TMC2209Stepper &stepper, Button &buttonA, Button &buttonB, toggleButton &buttonC, Poti &poti, IRsend &ir);
+    filmScanner(AccelStepper &motor, TMC2209Stepper &driver, Button &buttonA, Button &buttonB, toggleButton &buttonC, Poti &poti, IRsend &ir);
 
     // Reference Objects
-    TMC2209Stepper &stepper;
+    AccelStepper &motor;
+    TMC2209Stepper &driver;
     Button &buttonA;
     Button &buttonB;
     toggleButton &buttonC;
