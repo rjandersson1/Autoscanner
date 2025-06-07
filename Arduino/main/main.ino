@@ -32,7 +32,7 @@
 // ======================== Pindef ============================= //
 
 #define PIN_IR      12
-#define PIN_LED     8
+#define PIN_LED     9
 #define IR_SEND_PIN PIN_IR // Set the IR sending pin to Pin 9
 #define PIN_BTN_A   A3  
 #define PIN_BTN_B   A0  
@@ -52,7 +52,7 @@
 
 // ===================== Button Callback Definition =================//
 
-#define FUN_A1 
+#define FUN_A1 scanner.takePhoto()
 #define FUN_A2 
 #define FUN_A3 
 #define FUN_AH 
@@ -69,8 +69,8 @@
 #define FUN_C_TOGGLED 
 #define FUN_C_WHILEON 
 #define FUN_C_WHILEOFF
-#define FUN_C_ON 
-#define FUN_C_OFF 
+#define FUN_C_ON digitalWrite(PIN_IR, HIGH); digitalWrite(PIN_LED, HIGH) // Turn on IR LED
+#define FUN_C_OFF digitalWrite(PIN_IR, LOW); digitalWrite(PIN_LED, LOW)  // Turn off IR LED
 
 // ====================== Object Definition ======================== //
 
@@ -79,7 +79,7 @@ Button buttonA(PIN_BTN_A);
 Button buttonB(PIN_BTN_B);
 toggleButton buttonC(PIN_BTN_C);
 Poti poti(PIN_POTI, 0, 1023);
-IRsend irLED(IR_SEND_PIN);
+IRsend irLED(IR_SEND_PIN); // IR_LED V_f = 1.150, R = 200Ohm, I ~ 20mA
 
 // Stepper motor
 SoftwareSerial tmc_serial(PIN_TMC2209_RX, PIN_TMC2209_TX); // RX, TX
@@ -93,6 +93,7 @@ filmScanner scanner(motor, driver, buttonA, buttonB, buttonC, poti, irLED);
 
 void setup() {
 	Serial.begin(9600);
+  initLEDs();
 	initButtons();
 	initStepper();
 }
@@ -108,6 +109,14 @@ void readButtons() {
 	buttonC.read();
 	poti.read();
 }
+
+void initLEDs() {
+  pinMode(PIN_LED, OUTPUT);
+  digitalWrite(PIN_LED, LOW); 
+  pinMode(PIN_IR, OUTPUT);
+  digitalWrite(PIN_IR, LOW); 
+}
+// Initializes button callbacks
 
 void initButtons() {	
   // Button A
