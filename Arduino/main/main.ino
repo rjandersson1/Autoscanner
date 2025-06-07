@@ -31,15 +31,15 @@
 
 // ======================== Pindef ============================= //
 
-#define PIN_IR      12
 #define PIN_LED     9
+#define PIN_IR      8
 #define IR_SEND_PIN PIN_IR // Set the IR sending pin to Pin 9
-#define PIN_BTN_A   A3  
-#define PIN_BTN_B   A0  
-#define PIN_BTN_C   A5  
-#define PIN_POTI    A6  
 #define SW_DN       A1
 #define SW_UP       A2
+#define PIN_BTN_A   A3  
+#define PIN_BTN_B   A4  
+#define PIN_BTN_C   A5  
+#define PIN_POTI    A6  
 
 // Define motor driver pins (TMC2209)
 #define PIN_EN     2
@@ -52,16 +52,16 @@
 
 // ===================== Button Callback Definition =================//
 
-#define FUN_A1 scanner.takePhoto()
-#define FUN_A2 
+#define FUN_A1 //scanner.dynamicPosition()
+#define FUN_A2 scanner.calibrate()
 #define FUN_A3 
-#define FUN_AH 
+#define FUN_AH scanner.moveFrame()
 #define TIME_AH 1000    // Hold time [ms]
 #define TIME_A 0        // Multiclick time [ms]
 
-#define FUN_B1 
-#define FUN_B2 
-#define FUN_B3 
+#define FUN_B1 scanner.DEBUG_findMaxVelocity()
+#define FUN_B2 scanner.moveFrame()
+#define FUN_B3 scanner.takePhoto()
 #define FUN_BH 
 #define TIME_BH 1000    // Hold time [ms]
 #define TIME_B 0        // Multiclick time [ms]
@@ -87,7 +87,7 @@ TMC2209Stepper driver(&tmc_serial, R_SENSE, DRIVER_ADDRESS); // Create TMC2209 d
 AccelStepper motor(AccelStepper::DRIVER, PIN_STEP, PIN_DIR); // Create stepper motor object
 
 // Film scanner
-filmScanner scanner(motor, driver, buttonA, buttonB, buttonC, poti, irLED);
+filmScanner scanner(motor, driver, buttonA, buttonB, buttonC, poti, irLED, PIN_LED); // Create film scanner object
 
 // ======================== Main ============================= //
 
@@ -100,6 +100,9 @@ void setup() {
 
 void loop() {
 	readButtons();
+  if (buttonA.isPressed) {
+    scanner.dynamicPosition();
+  }
 }
 
 // Reads button states
@@ -138,20 +141,35 @@ void initButtons() {
   // Button C
   buttonC.onToggle([] { FUN_C_TOGGLED; });
   buttonC.whileOn([] { FUN_C_WHILEON; });
+
   buttonC.toggledOn([] { FUN_C_ON; });
   buttonC.toggledOff([] { FUN_C_OFF; });
 }
-
 // Initializes the TMC2209 stepper driver
 void initStepper() {
+    pinMode(PIN_EN, OUTPUT); // Set enable pin as output
+    digitalWrite(PIN_EN, LOW); // Enable driver (active low)
     // UART config for TMC2209
     tmc_serial.begin(115200);
+
     driver.begin();
     driver.toff(4);
     driver.blank_time(24);
-    driver.rms_current(100);
+    driver.rms_current(300);
     driver.microsteps(1);
     driver.pwm_autoscale(true);
+    long startTime = millis();
+
+    if (driver.test_connection() == 2) {
+      Serial.println("TMC2209 drive VMOT = 0V, please check power supply!");
+    }
+    else if (driver.test_connection() == 0) {
+      Serial.println("TMC2209 driver UART success!");
+    }
+    else {
+      Serial.println("TMC2209 driver UART failed to initialize!");
+      while(1);
+    }
 
     // AccelStepper motion setup
     motor.setMaxSpeed(1000);        // reasonable default
