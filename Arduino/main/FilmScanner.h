@@ -14,7 +14,7 @@ class filmScanner {
 public:
 
     // Constructor
-    filmScanner(AccelStepper &motor, TMC2209Stepper &driver, Button &buttonA, Button &buttonB, toggleButton &buttonC, Poti &poti, IRsend &irLED);
+    filmScanner(AccelStepper &motor, TMC2209Stepper &driver, Button &buttonA, Button &buttonB, toggleButton &buttonC, Poti &poti, IRsend &irLED, int PIN_LED);
 
     // Reference Objects
     AccelStepper &motor;
@@ -29,9 +29,10 @@ public:
     // Properties
     long frameWidth = 0; // [steps]
     bool scanning;
+    int PIN_LED; // LED pin for feedback
 
     // default motor parameters
-    float maxAcceleration = 1000; // [steps/s^2]
+    float maxAcceleration = 40000; // [steps/s^2]
     float maxSpeed = 1000; // [steps/s]
 
 
