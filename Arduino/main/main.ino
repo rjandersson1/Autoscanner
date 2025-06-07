@@ -18,13 +18,16 @@
 
 
 // ======================== Libraries =========================== //
+#include <IRremote.hpp>
 #include <Arduino.h>
 #include <SoftwareSerial.h>
-#include "libraries/buttons.h"
-#include "libraries/filmScanner.h"
-#include "libraries/AccelStepper.h"
-#include "libraries/TMC/TMCStepper.h"
-#include "libraries/IRremote/IRremote.h"
+#include "Buttons.h"
+#include "FilmScanner.h"
+// #include "libraries/AccelStepper.h"
+#include <AccelStepper.h>
+// #include "libraries/TMCStepper/TMCStepper.h"
+#include <TMCStepper.h>
+// #include "libraries/IRremote/IRremote.h"
 
 // ======================== Pindef ============================= //
 
@@ -49,7 +52,7 @@
 
 // ===================== Button Callback Definition =================//
 
-#define FUN_A1 scanner.takePhoto() // Take photo
+#define FUN_A1 
 #define FUN_A2 
 #define FUN_A3 
 #define FUN_AH 
@@ -76,7 +79,7 @@ Button buttonA(PIN_BTN_A);
 Button buttonB(PIN_BTN_B);
 toggleButton buttonC(PIN_BTN_C);
 Poti poti(PIN_POTI, 0, 1023);
-IRsend ir(IR_SEND_PIN);
+IRsend irLED(IR_SEND_PIN);
 
 // Stepper motor
 SoftwareSerial tmc_serial(PIN_TMC2209_RX, PIN_TMC2209_TX); // RX, TX
@@ -84,7 +87,7 @@ TMC2209Stepper driver(&tmc_serial, R_SENSE, DRIVER_ADDRESS); // Create TMC2209 d
 AccelStepper motor(AccelStepper::DRIVER, PIN_STEP, PIN_DIR); // Create stepper motor object
 
 // Film scanner
-filmScanner scanner(motor, driver, buttonA, buttonB, buttonC, poti, ir);
+filmScanner scanner(motor, driver, buttonA, buttonB, buttonC, poti, irLED);
 
 // ======================== Main ============================= //
 
