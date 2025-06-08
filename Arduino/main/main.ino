@@ -155,7 +155,7 @@ void initStepper() {
     driver.begin();
     driver.toff(4);
     driver.blank_time(24);
-    driver.rms_current(300);
+    driver.rms_current(200);
     driver.microsteps(1);
     driver.pwm_autoscale(true);
     long startTime = millis();
