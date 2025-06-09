@@ -1,6 +1,11 @@
 #include "FilmScanner.h"
 #include <Arduino.h>
 
+// TODO
+// Fix microstepping at 1:1 bug
+// Improve smootheness/responsiveness of dynamicPosition()
+// Fix bug where after moving at limit in dynamicPosition(), when moving away from limit, the motor returns to where it began, instead of moving to the new position.
+
 
 // Constructor
 filmScanner::filmScanner(AccelStepper &motor, TMC2209Stepper &driver, Button &buttonA, Button &buttonB, toggleButton &buttonC, Poti &poti, IRsend &irLED, int PIN_LED)
@@ -21,6 +26,8 @@ void filmScanner::takePhoto() {
         delay(40);
     }
     digitalWrite(PIN_LED, LOW); // Turn off LED after photo taken
+
+
     Serial.println("Photo taken.");
 }
 
@@ -39,61 +46,65 @@ void filmScanner::moveFrame() {
 long filmScanner::dynamicPosition() {
     digitalWrite(PIN_LED, HIGH); // Turn on LED to indicate positioning
     // Init vars
-    const long MAP_VAL = 400; // Max potentiometer value (+/- steps)
-    const int MICROSTEP = 2;
-    const int DELTA_THRESHOLD = 2; // Threshold for change in position to trigger movement
+    const long MAP_VAL = 800; // Max potentiometer value (+/- steps)
+    const int MICROSTEP = 16;
+    const int DELTA_THRESHOLD = 0.005 * MAP_VAL; // Threshold for change in position to trigger movement
     const int FILTER_WINDOW = 1; // Number of readings for moving average
-    const int ACCEL_MOVING = 1000; // Acceleration for movement [step/s^2]
-    const int SPEED_MOVING = 1000; // Speed for movement [steps/s]
-    const int SPEED_POSITIONING = 1000; // (fine) Speed for positioning [steps/s]
+    const long ACCEL_MOVING = 8000; // Acceleration for movement [step/s^2]
+    const long SPEED_MOVING = 8000; // Speed for movement [steps/s]
+    const long ACCEL_POSITIONING = ACCEL_MOVING * 100;
+    const long SPEED_POSITIONING = 8000; // (fine) Speed for positioning [steps/s]
     const long POTI_LIMIT = (MAP_VAL * 99) / 100; // Limit for potentiometer to trigger continuous movement
 
     // Setup
     poti.setMap(-MAP_VAL, MAP_VAL);
     poti.initFilter(FILTER_WINDOW); // Initialize filter with window size
     driver.microsteps(MICROSTEP);
-    motor.setMaxSpeed(1000);
+    motor.setMaxSpeed(SPEED_MOVING);
+    long stepCount = 0;
     
     // Wait for potentiometer to return to zero (+/- 2)
-    Serial.println("Waiting for potentiometer to return to zero...");
-    while (poti.getMap() > 2 || poti.getMap() < -2) {
+    while ((float)abs(poti.getMap()) > (float)(0.01 * MAP_VAL)) {
         poti.read();
-        Serial.print("Current potentiometer value: ");
-        Serial.println(poti.getMap());
+        // Serial.println(poti.getMap());
         delay(10); // Delay to avoid flooding the serial output
     }
-    delay(1000);
     digitalWrite(PIN_LED, LOW); // Turn off LED to indicate ready
+    // delay(1000);
     
     // Set initial position to zero
     motor.setCurrentPosition(0); 
 
     // Loop
-    Serial.println("Starting dynamic positioning. Press button A to exit.");
-    buttonA.read(); // Read button state before entering loop
-    while (!buttonA.isPressed) {
+    // Serial.println("Starting dynamic positioning. Press button A to exit.");
+    digitalWrite(PIN_LED, HIGH);
+    long prevPotiReading = 0; // Previous potentiometer reading
+    while (1) {
         buttonA.read();
         if (buttonA.isPressed) {
-            Serial.println("Button A pressed. Exiting dynamic positioning.");
+            // Serial.println("Button A pressed. Exiting dynamic positioning.");
+            digitalWrite(PIN_LED, LOW); // Turn off LED
+            delay(150);
+            digitalWrite(PIN_LED, HIGH); // Turn on LED to indicate exit
+            delay(150);
+            digitalWrite(PIN_LED, LOW); // Turn off LED
             break;  // Exit loop if button A is pressed
         }
         // // Read potentiometer value
-        int newReading = poti.getMap();
+        // prevPotiReading = poti.getMap(); // Get old potentiometer reading
+        poti.read(); // Read potentiometer value
+        long potiReading = poti.getMap(); // Read raw potentiometer value
+        long newReading = potiReading + motor.currentPosition();
         // Serial.println(newReading);
 
         // Case 1: Poti at limit --> begin ramp up to continuous movement
-        if (abs(newReading) > POTI_LIMIT) {
-            // Serial.println("Poti at limit. Starting continuous movement...");
-            // Serial.println(POTI_LIMIT);
-            // Serial.print("New reading: ");
-            // Serial.println(newReading);
-
+        if (abs(potiReading) > POTI_LIMIT) {
             // Set direction
-            int moveDir = (newReading > 0) ? 1 : -1; 
+            int moveDir = (potiReading > 0) ? 1 : -1; 
 
             // Set speed/accel for continuous movement
             motor.setAcceleration(ACCEL_MOVING);
-            motor.setSpeed(SPEED_MOVING);
+            motor.setMaxSpeed(SPEED_MOVING);
 
             // Set target position far away to allow continuous movement
             motor.move(moveDir * 10000);
@@ -101,33 +112,35 @@ long filmScanner::dynamicPosition() {
             // Continuously run motor (with ramps) until poti is moved away from limits
             while (abs(poti.getMap()) > POTI_LIMIT) {
                 motor.run();
+                poti.read();
             }
-            // motor.move(0);
-            motor.run();
-            // motor.stop(); // optional: decelerate motor after reaching limit
 
-            // Reset motor speed to default
-            // motor.setSpeed(SPEED_POSITIONING); // Set speed for positioning
+            // Decelerate
+            // motor.setAcceleration(4*ACCEL_MOVING);
+            // motor.stop();
+            // while (motor.distanceToGo() != 0) {
+            //     motor.run(); // Run motor to reach target position;
+            // }
         }
         
         // Case 2: Poti not at limit --> begin dynamic positioning with poti readings
         else {
-            
             // Compare positions
+
             long currentPos = motor.currentPosition();
-            long delta = (long)newReading - currentPos; // Calculate change in position
-
+            long delta = prevPotiReading - potiReading; // Calculate change in position
+            // Serial.println(String(currentPos) + " [] " + String(motor.targetPosition()) + " [] " + String(delta));
+            
             if (abs(delta) > DELTA_THRESHOLD) {
-                // Serial.println("Poti not at limit. Starting dynamic positioning...");
-                if (delta > 0) motor.setMaxSpeed(SPEED_POSITIONING); // Set speed for positive movement
-                if (delta < 0) motor.setMaxSpeed(-SPEED_POSITIONING); // Set speed for negative movement
-
+                // Serial.println("[!] " + delta);
+                motor.setAcceleration(ACCEL_POSITIONING); // Set acceleration for positioning
+                motor.setMaxSpeed(SPEED_POSITIONING);
                 // Run motor to new position
-                motor.move(delta); // Set target position
-                motor.setAcceleration(40000); // Set acceleration for positioning
+                motor.move(-delta); // Set target position
                 while (motor.distanceToGo() != 0) {
                     motor.run(); // Run motor to reach target position
                 }
+                prevPotiReading = poti.getMap(); // Get old potentiometer reading
             }
         }
     }
@@ -157,9 +170,9 @@ void filmScanner::DEBUG_findMaxVelocity() {
     }
     int direction = 1;
     while (1) {
-        // if (buttonA.isPressed) {
-        //     break;  // Exit loop if button A is pressed
-        // }
+        if (buttonA.isPressed) {
+            break;  // Exit loop if button A is pressed
+        }
 
         // Read potentiometer value
         int newReading = poti.getMap()+ 150;
