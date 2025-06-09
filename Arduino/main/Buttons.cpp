@@ -54,7 +54,6 @@ float Poti::getFloat() {
 
 // Returns custom mapping
 float Poti::getMap() {
-	read();
 	float value = mapFloat(currentValue, min_value, max_value, mapMin, mapMax);
 	return value;
 }
