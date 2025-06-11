@@ -30,6 +30,7 @@ public:
     long frameWidth = 0; // [steps]
     bool scanning;
     int PIN_LED; // LED pin for feedback
+    float multiplier = 1.0;
 
     // default motor parameters
     float maxAcceleration = 40000; // [steps/s^2]
@@ -47,7 +48,7 @@ public:
     long dynamicPosition();
     void DEBUG_findMaxVelocity();
     void scan135();
-
+    float setScanSpeed();
 
 
 private:

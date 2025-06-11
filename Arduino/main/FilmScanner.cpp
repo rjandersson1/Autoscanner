@@ -32,10 +32,11 @@ void filmScanner::takePhoto() {
 }
 
 void filmScanner::moveFrame(long steps) {
-    motor.setMaxSpeed(5000); // default max speed [steps/s]
-    motor.setAcceleration(16000); // default max acceleration [steps/s^2]
-    driver.microsteps(4); // Set microstepping to 1/16
-    motor.move(steps/4); // Move motor by frame width [steps]
+    // Set speed/accel for continuous movement
+    motor.setAcceleration(300 * multiplier);
+    motor.setMaxSpeed(500 * multiplier);
+    driver.microsteps(2);
+    motor.move(steps); // Set target position
 
     while (motor.isRunning() != 0) {
         motor.run(); // Run motor to reach target position
@@ -47,14 +48,14 @@ void filmScanner::moveFrame(long steps) {
 long filmScanner::dynamicPosition() {
     digitalWrite(PIN_LED, HIGH); // Turn on LED to indicate positioning
     // Init vars
-    const long MAP_VAL = 800; // Max potentiometer value (+/- steps)
-    const int MICROSTEP = 16;
+    const long MAP_VAL = 800/2; // Max potentiometer value (+/- steps)
+    const int MICROSTEP = 16/4;
     const int DELTA_THRESHOLD = 0.005 * MAP_VAL; // Threshold for change in position to trigger movement
     const int FILTER_WINDOW = 1; // Number of readings for moving average
-    const long ACCEL_MOVING = 8000; // Acceleration for movement [step/s^2]
-    const long SPEED_MOVING = 8000; // Speed for movement [steps/s]
+    const long ACCEL_MOVING = 8000/4; // Acceleration for movement [step/s^2]
+    const long SPEED_MOVING = 8000/4; // Speed for movement [steps/s]
     const long ACCEL_POSITIONING = ACCEL_MOVING * 100;
-    const long SPEED_POSITIONING = 8000; // (fine) Speed for positioning [steps/s]
+    const long SPEED_POSITIONING = 8000/4; // (fine) Speed for positioning [steps/s]
     const long POTI_LIMIT = (MAP_VAL * 99) / 100; // Limit for potentiometer to trigger continuous movement
 
     // Setup
@@ -68,14 +69,15 @@ long filmScanner::dynamicPosition() {
     // delay(1000);
     
     // Set initial position to zero
-    motor.setCurrentPosition(0); 
+    motor.setCurrentPosition(poti.getMap()); 
 
     // Loop
     // Serial.println("Starting dynamic positioning. Press button A to exit.");
     digitalWrite(PIN_LED, HIGH);
-    long prevPotiReading = 0; // Previous potentiometer reading
+    long prevPotiReading = poti.getMap(); // Previous potentiometer reading
     while (1) {
         buttonA.read();
+        buttonB.read();
         if (buttonA.isPressed) {
             // Serial.println("Button A pressed. Exiting dynamic positioning.");
             digitalWrite(PIN_LED, LOW); // Turn off LED
@@ -84,6 +86,9 @@ long filmScanner::dynamicPosition() {
             delay(150);
             digitalWrite(PIN_LED, LOW); // Turn off LED
             break;  // Exit loop if button A is pressed
+        }
+        if (buttonB.isPressed) {
+            takePhoto();
         }
         // // Read potentiometer value
         // prevPotiReading = poti.getMap(); // Get old potentiometer reading
@@ -98,8 +103,9 @@ long filmScanner::dynamicPosition() {
             int moveDir = (potiReading > 0) ? 1 : -1; 
 
             // Set speed/accel for continuous movement
-            motor.setAcceleration(ACCEL_MOVING);
-            motor.setMaxSpeed(SPEED_MOVING);
+            motor.setAcceleration(60 * multiplier);
+            motor.setMaxSpeed(500 * multiplier);
+            driver.microsteps(2);
 
             // Set target position far away to allow continuous movement
             motor.move(moveDir * 40000);
@@ -109,6 +115,8 @@ long filmScanner::dynamicPosition() {
                 motor.run();
                 poti.read();
             }
+
+            driver.microsteps(MICROSTEP); // Reset microstepping
         }
         
         // Case 2: Poti not at limit --> begin dynamic positioning with poti readings
@@ -217,58 +225,54 @@ void filmScanner::scan135() {
     // Scan 135 film
     Serial.println("Scanning 135 film...");
 
-    Serial.println("Calibrate film width... press A to select calibration.)");
-
-    frameWidth = calibrate(); // Use calibrate() to set frame width
-    moveFrame(frameWidth);
-    delay(250);
-    moveFrame(-frameWidth);
-    // Press A to take photo, press B to move to next frame, press C to stop scanning.
-    // Use poti for fine adjustments after moving to next frame.
-    Serial.println("Press A to take photo, B to move to next frame, C to stop scanning. Poti for fine adjustments.");
+    // Set speed multiplier
+    setScanSpeed();
+    
+    // Press A to take photo then dynamicPosition() to next frame (press A again), press B to exit.
     while (1) {
-        buttonA.read();
-        // delay(100);
-        buttonB.read();
-        // delay(100);
-        buttonC.read();
-        // delay(100);
-        poti.read();
+        
+        // read buttons for for 250ms
+        long startTime = millis();
+        while (millis() - startTime < 200) {
+            buttonA.read();
+            buttonB.read();
+            buttonC.read();
+            poti.read();
+            if (buttonA.isPressed || buttonB.isPressed) {
+                //exit out of loop
+                break;
+            }
+        }
+        if (buttonB.isPressed){
+            moveFrame(-(long)3200/2/2/2); // Move back to start position
+        }
 
-        if (buttonA.isPressed) {
-            Serial.println("Taking photo...");
+        if (1) {
             takePhoto(); // Take photo
-            delay(250); // Delay to avoid multiple photos
-        }
-        if (buttonB.isPressed) {
-            Serial.println("Moving to next frame...");
-            moveFrame(frameWidth); // Move to next frame
-            delay(250); // Delay to avoid multiple moves
+            delay(400); // Delay to avoid multiple photos
+            moveFrame((long)3200/2/2/2);
+            delay(1);
             dynamicPosition();
-            delay(250);
-            Serial.println("Taking photo...");
-            takePhoto();
-            delay(250);
         }
-        if (buttonC.state) {
-            buttonC.state = 0;
-            // Serial.println("Stopping scan.");
-            // buttonC.state = 0;
-            // delay(250);
-            // break; // Stop scanning
-            Serial.println("Calibrating...");
-            long before = frameWidth;
-            long after = calibrate(); // Recalibrate frame width
+    }
+}
 
-            // Print before/after and difference
-            Serial.print("Before: ");
-            Serial.print(before);
-            Serial.print(" After: ");
-            Serial.print(after);
-            Serial.print(" Difference: ");
-            Serial.println(after - before);
-            frameWidth = after; // Update frame width
+float filmScanner::setScanSpeed() {
+    multiplier = 1.0;
+    poti.setMap(0, 32);
+    // read poti value, print, and wait for button A to select funal multiplier
+    while (1) {
+        poti.read();
+        buttonA.read();
+        if (buttonA.isPressed) {
+            Serial.print("Final multiplier: ");
+            Serial.println(multiplier, 2); // Print final multiplier
             delay(250);
+            return multiplier;
         }
+        multiplier = poti.getMap();
+        Serial.print("Multiplier: ");
+        Serial.println(multiplier, 2); // Print potentiometer value
+        delay(100);
     }
 }
