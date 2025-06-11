@@ -37,7 +37,7 @@ public:
 
 
     // Methods
-    void moveFrame();
+    void moveFrame(long steps);
     void setup();
     long calibrate();
     void takePhoto();
@@ -46,6 +46,7 @@ public:
     void dynamicMove();
     long dynamicPosition();
     void DEBUG_findMaxVelocity();
+    void scan135();
 
 
 

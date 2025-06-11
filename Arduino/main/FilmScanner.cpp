@@ -31,14 +31,15 @@ void filmScanner::takePhoto() {
     Serial.println("Photo taken.");
 }
 
-void filmScanner::moveFrame() {
-    motor.setMaxSpeed(maxSpeed); // default max speed [steps/s]
-    motor.setAcceleration(maxAcceleration); // default max acceleration [steps/s^2]
-    motor.move(frameWidth); // Move motor by frame width [steps]
-    while (motor.distanceToGo() != 0) {
+void filmScanner::moveFrame(long steps) {
+    motor.setMaxSpeed(5000); // default max speed [steps/s]
+    motor.setAcceleration(16000); // default max acceleration [steps/s^2]
+    driver.microsteps(4); // Set microstepping to 1/16
+    motor.move(steps/4); // Move motor by frame width [steps]
+
+    while (motor.isRunning() != 0) {
         motor.run(); // Run motor to reach target position
     }
-    motor.stop();
 }
 
 
@@ -63,12 +64,6 @@ long filmScanner::dynamicPosition() {
     motor.setMaxSpeed(SPEED_MOVING);
     long stepCount = 0;
     
-    // Wait for potentiometer to return to zero (+/- 2)
-    while ((float)abs(poti.getMap()) > (float)(0.01 * MAP_VAL)) {
-        poti.read();
-        // Serial.println(poti.getMap());
-        delay(10); // Delay to avoid flooding the serial output
-    }
     digitalWrite(PIN_LED, LOW); // Turn off LED to indicate ready
     // delay(1000);
     
@@ -107,20 +102,13 @@ long filmScanner::dynamicPosition() {
             motor.setMaxSpeed(SPEED_MOVING);
 
             // Set target position far away to allow continuous movement
-            motor.move(moveDir * 10000);
+            motor.move(moveDir * 40000);
 
             // Continuously run motor (with ramps) until poti is moved away from limits
             while (abs(poti.getMap()) > POTI_LIMIT) {
                 motor.run();
                 poti.read();
             }
-
-            // Decelerate
-            // motor.setAcceleration(4*ACCEL_MOVING);
-            // motor.stop();
-            // while (motor.distanceToGo() != 0) {
-            //     motor.run(); // Run motor to reach target position;
-            // }
         }
         
         // Case 2: Poti not at limit --> begin dynamic positioning with poti readings
@@ -137,7 +125,7 @@ long filmScanner::dynamicPosition() {
                 motor.setMaxSpeed(SPEED_POSITIONING);
                 // Run motor to new position
                 motor.move(-delta); // Set target position
-                while (motor.distanceToGo() != 0) {
+                while (motor.isRunning() != 0) {
                     motor.run(); // Run motor to reach target position
                 }
                 prevPotiReading = poti.getMap(); // Get old potentiometer reading
@@ -176,9 +164,6 @@ void filmScanner::DEBUG_findMaxVelocity() {
 
         // Read potentiometer value
         int newReading = poti.getMap()+ 150;
-
-        Serial.println("Speed:" + String(newReading) + "[step/s]" + 
-                       " Acceleration:" + String(maxAcceleration) + "[step/s^2]" + microStepSetting + "x microstepping");
         
         // Move 400 steps at set speed or until 3 seconds has passed
         motor.setMaxSpeed(1000); // Set speed based on potentiometer reading
@@ -213,12 +198,12 @@ void filmScanner::DEBUG_findMaxVelocity() {
 long filmScanner::calibrate() {
     // Position scanner to frame start
     dynamicPosition();
-    takePhoto();
+    // takePhoto();
 
     // Position scanner to next frame (or end of frame)
     frameWidth = dynamicPosition(); // [steps]
 
-    takePhoto();
+    // takePhoto();
 
     // TODO: if medium format (i.e. frameWide > 36mm), use a button to set how many scans to make. Also use dynamicPosition() to set distance to next frame start
 
@@ -226,4 +211,64 @@ long filmScanner::calibrate() {
     // gutterWidth = dynamicPosition(); // distance from end of frame 0 to start of frame 1[steps] 
     Serial.println(frameWidth);
     return frameWidth;
+}
+
+void filmScanner::scan135() {
+    // Scan 135 film
+    Serial.println("Scanning 135 film...");
+
+    Serial.println("Calibrate film width... press A to select calibration.)");
+
+    frameWidth = calibrate(); // Use calibrate() to set frame width
+    moveFrame(frameWidth);
+    delay(250);
+    moveFrame(-frameWidth);
+    // Press A to take photo, press B to move to next frame, press C to stop scanning.
+    // Use poti for fine adjustments after moving to next frame.
+    Serial.println("Press A to take photo, B to move to next frame, C to stop scanning. Poti for fine adjustments.");
+    while (1) {
+        buttonA.read();
+        // delay(100);
+        buttonB.read();
+        // delay(100);
+        buttonC.read();
+        // delay(100);
+        poti.read();
+
+        if (buttonA.isPressed) {
+            Serial.println("Taking photo...");
+            takePhoto(); // Take photo
+            delay(250); // Delay to avoid multiple photos
+        }
+        if (buttonB.isPressed) {
+            Serial.println("Moving to next frame...");
+            moveFrame(frameWidth); // Move to next frame
+            delay(250); // Delay to avoid multiple moves
+            dynamicPosition();
+            delay(250);
+            Serial.println("Taking photo...");
+            takePhoto();
+            delay(250);
+        }
+        if (buttonC.state) {
+            buttonC.state = 0;
+            // Serial.println("Stopping scan.");
+            // buttonC.state = 0;
+            // delay(250);
+            // break; // Stop scanning
+            Serial.println("Calibrating...");
+            long before = frameWidth;
+            long after = calibrate(); // Recalibrate frame width
+
+            // Print before/after and difference
+            Serial.print("Before: ");
+            Serial.print(before);
+            Serial.print(" After: ");
+            Serial.print(after);
+            Serial.print(" Difference: ");
+            Serial.println(after - before);
+            frameWidth = after; // Update frame width
+            delay(250);
+        }
+    }
 }

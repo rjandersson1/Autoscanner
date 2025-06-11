@@ -52,19 +52,19 @@
 
 // ===================== Button Callback Definition =================//
 
-#define FUN_A1 scanner.takePhoto() //scanner.dynamicPosition()
+#define FUN_A1 //scanner.scan135()
 #define FUN_A2 //scanner.calibrate()
 #define FUN_A3 
 #define FUN_AH //scanner.moveFrame()
 #define TIME_AH 1000    // Hold time [ms]
-#define TIME_A 0        // Multiclick time [ms]
+#define TIME_A 500        // Multiclick time [ms]
 
-#define FUN_B1 scanner.dynamicPosition()
-#define FUN_B2 //scanner.moveFrame()
-#define FUN_B3 //scanner.takePhoto()
+#define FUN_B1 
+#define FUN_B2 
+#define FUN_B3 
 #define FUN_BH 
 #define TIME_BH 1000    // Hold time [ms]
-#define TIME_B 0        // Multiclick time [ms]
+#define TIME_B 500        // Multiclick time [ms]
 
 #define FUN_C_TOGGLED 
 #define FUN_C_WHILEON 
@@ -100,6 +100,12 @@ void setup() {
 
 void loop() {
 	readButtons();
+  if (buttonA.isPressed) {
+    Serial.println("Button A pressed");
+    delay(500);
+    scanner.scan135(); // Example function call
+    Serial.println("Finished scanning");
+  }
 }
 
 // Reads button states
@@ -152,7 +158,7 @@ void initStepper() {
     driver.begin();
     driver.toff(4);
     driver.blank_time(24);
-    driver.rms_current(200);
+    driver.rms_current(300);
     driver.microsteps(1);
     driver.pwm_autoscale(true);
     long startTime = millis();
