@@ -2,20 +2,22 @@
 #include <Arduino.h>
 
 // TODO
-// Fix microstepping at 1:1 bug
-// Improve smootheness/responsiveness of dynamicPosition()
-// Fix bug where after moving at limit in dynamicPosition(), when moving away from limit, the motor returns to where it began, instead of moving to the new position.
+// one perf ~185s @ 8uS
+// one frame 8 perf
+// 1mm = 38.95 steps
 
+//
 
 // Constructor
-filmScanner::filmScanner(AccelStepper &motor, TMC2209Stepper &driver, Button &buttonA, Button &buttonB, toggleButton &buttonC, Poti &poti, IRsend &irLED, int PIN_LED)
-    : motor(motor), driver(driver), buttonA(buttonA), buttonB(buttonB), buttonC(buttonC), poti(poti), irLED(irLED), PIN_LED(PIN_LED)
+filmScanner::filmScanner(AccelStepper &motor, TMC2209Stepper &driver, Button &buttonA, Poti &poti, IRsend &irLED, int PIN_LED)
+    : motor(motor), driver(driver), buttonA(buttonA), poti(poti), irLED(irLED), PIN_LED(PIN_LED)
 {
-    setup();
+    //
 }
 
 void filmScanner::setup() {
-    // TODO: add setup code here if needed
+    poti.initFilter(1); // Initialize filter with window size
+    calibrate();
 }
 
 // Sends IR signal 3 times
@@ -26,30 +28,19 @@ void filmScanner::takePhoto() {
         delay(40);
     }
     digitalWrite(PIN_LED, LOW); // Turn off LED after photo taken
-
-
-    Serial.println("Photo taken.");
 }
 
-void filmScanner::moveFrame() {
-    motor.setMaxSpeed(maxSpeed); // default max speed [steps/s]
-    motor.setAcceleration(maxAcceleration); // default max acceleration [steps/s^2]
-    motor.move(frameWidth); // Move motor by frame width [steps]
-    while (motor.distanceToGo() != 0) {
-        motor.run(); // Run motor to reach target position
-    }
-    motor.stop();
+void filmScanner::scanFrame() {
+    takePhoto();
+    delay(exposureTime);
 }
-
 
 // Moves film scanner position based on potentiometer input. When at limits, it ramps up to continuous movement.
 long filmScanner::dynamicPosition() {
-    digitalWrite(PIN_LED, HIGH); // Turn on LED to indicate positioning
     // Init vars
-    const long MAP_VAL = 800; // Max potentiometer value (+/- steps)
-    const int MICROSTEP = 16;
+    const long MAP_VAL = 800/2; // Max potentiometer value (+/- steps)
+    const int MICROSTEP = 8; // Was 8 originally
     const int DELTA_THRESHOLD = 0.005 * MAP_VAL; // Threshold for change in position to trigger movement
-    const int FILTER_WINDOW = 1; // Number of readings for moving average
     const long ACCEL_MOVING = 8000; // Acceleration for movement [step/s^2]
     const long SPEED_MOVING = 8000; // Speed for movement [steps/s]
     const long ACCEL_POSITIONING = ACCEL_MOVING * 100;
@@ -58,7 +49,6 @@ long filmScanner::dynamicPosition() {
 
     // Setup
     poti.setMap(-MAP_VAL, MAP_VAL);
-    poti.initFilter(FILTER_WINDOW); // Initialize filter with window size
     driver.microsteps(MICROSTEP);
     motor.setMaxSpeed(SPEED_MOVING);
     long stepCount = 0;
@@ -66,36 +56,27 @@ long filmScanner::dynamicPosition() {
     // Wait for potentiometer to return to zero (+/- 2)
     while ((float)abs(poti.getMap()) > (float)(0.01 * MAP_VAL)) {
         poti.read();
-        // Serial.println(poti.getMap());
-        delay(10); // Delay to avoid flooding the serial output
+        delay(10); // Delay to avoid flooding
     }
-    digitalWrite(PIN_LED, LOW); // Turn off LED to indicate ready
-    // delay(1000);
-    
-    // Set initial position to zero
     motor.setCurrentPosition(0); 
 
     // Loop
-    // Serial.println("Starting dynamic positioning. Press button A to exit.");
-    digitalWrite(PIN_LED, HIGH);
-    long prevPotiReading = 0; // Previous potentiometer reading
+    long prevPotiReading = poti.getMap(); // Previous potentiometer reading
     while (1) {
         buttonA.read();
-        if (buttonA.isPressed) {
-            // Serial.println("Button A pressed. Exiting dynamic positioning.");
-            digitalWrite(PIN_LED, LOW); // Turn off LED
+        if (buttonA.isPressed) { // Exit loop
+            digitalWrite(PIN_LED, LOW);
             delay(150);
-            digitalWrite(PIN_LED, HIGH); // Turn on LED to indicate exit
+            digitalWrite(PIN_LED, HIGH);
             delay(150);
-            digitalWrite(PIN_LED, LOW); // Turn off LED
-            break;  // Exit loop if button A is pressed
+            digitalWrite(PIN_LED, LOW);
+            break;
         }
-        // // Read potentiometer value
-        // prevPotiReading = poti.getMap(); // Get old potentiometer reading
+
+        // Read potentiometer value
         poti.read(); // Read potentiometer value
         long potiReading = poti.getMap(); // Read raw potentiometer value
         long newReading = potiReading + motor.currentPosition();
-        // Serial.println(newReading);
 
         // Case 1: Poti at limit --> begin ramp up to continuous movement
         if (abs(potiReading) > POTI_LIMIT) {
@@ -114,28 +95,16 @@ long filmScanner::dynamicPosition() {
                 motor.run();
                 poti.read();
             }
-
-            // Decelerate
-            // motor.setAcceleration(4*ACCEL_MOVING);
-            // motor.stop();
-            // while (motor.distanceToGo() != 0) {
-            //     motor.run(); // Run motor to reach target position;
-            // }
         }
         
         // Case 2: Poti not at limit --> begin dynamic positioning with poti readings
         else {
             // Compare positions
-
-            long currentPos = motor.currentPosition();
             long delta = prevPotiReading - potiReading; // Calculate change in position
-            // Serial.println(String(currentPos) + " [] " + String(motor.targetPosition()) + " [] " + String(delta));
             
             if (abs(delta) > DELTA_THRESHOLD) {
-                // Serial.println("[!] " + delta);
                 motor.setAcceleration(ACCEL_POSITIONING); // Set acceleration for positioning
                 motor.setMaxSpeed(SPEED_POSITIONING);
-                // Run motor to new position
                 motor.move(-delta); // Set target position
                 while (motor.distanceToGo() != 0) {
                     motor.run(); // Run motor to reach target position
@@ -150,80 +119,223 @@ long filmScanner::dynamicPosition() {
 
     // Once finished positioning, return distance traveled
     long distanceTraveled = motor.currentPosition(); // Calculate distance traveled based on initial reading
-    Serial.print("Distance traveled: ");
-    Serial.println(distanceTraveled);
+    // Serial.print("Distance traveled: ");
+    // Serial.println(distanceTraveled);
     return distanceTraveled;
 }
 
-// Changes stepper speed based on potentiometer value
-void filmScanner::DEBUG_findMaxVelocity() {
-    Serial.println("DEBUG: Finding max velocity. Press button A to exit.");
-    delay(3000);
-    poti.setMap(0, 16000);
-    int microStepSetting = 1;
-    driver.microsteps(microStepSetting); // Set microstepping
-    motor.setMaxSpeed(1000); // Set initial max speed
-    motor.setAcceleration(50); // Set initial acceleration
-    motor.move(200);
-    while (motor.distanceToGo() != 0) {
-        motor.run(); // Run motor to reach target position
+
+// Move to start, set zero (A), move to end of frame (A), moves one frame, move to start again (A). Return distance
+long filmScanner::calibrate() {
+    // Move to start
+    dynamicPosition();
+    motor.setCurrentPosition(0);
+
+    // Move to end of frame
+    long measured = dynamicPosition();
+
+    // Move back to start
+    moveFrame(-measured);
+
+    // Compare widths to known distances
+    long measuredWidth = abs(measured);
+    direction = (measured > 0) - (measured < 0);
+    Serial.println(measuredWidth);
+
+    // Set scan mode
+    scanMode = setScanMode();
+
+    if (scanMode == 0) {
+        scanCount = 1;
+        frameWidth = frameWidth_135;
+        gutterWidth = gutterWidth_135;
     }
-    int direction = 1;
-    while (1) {
-        if (buttonA.isPressed) {
-            break;  // Exit loop if button A is pressed
-        }
+    if (scanMode == 1) {
+        frameWidth = measuredWidth;
+        gutterWidth = 100;
 
-        // Read potentiometer value
-        int newReading = poti.getMap()+ 150;
+        // Set scans per frame for 120
+        scanCount = setScansPerFrame();
+        Serial.print("Scancount: ");
+        Serial.println(scanCount);
+    }
 
-        Serial.println("Speed:" + String(newReading) + "[step/s]" + 
-                       " Acceleration:" + String(maxAcceleration) + "[step/s^2]" + microStepSetting + "x microstepping");
-        
-        // Move 400 steps at set speed or until 3 seconds has passed
-        motor.setMaxSpeed(1000); // Set speed based on potentiometer reading
-        motor.setAcceleration(newReading); // Set acceleration
-        motor.move(2 * 200 * microStepSetting * direction);
-        long startTime = millis(); // Start time for movement
-        while (motor.distanceToGo() != 0) {
-            motor.run(); // Run motor at set speed
-        }
-        // while (motor.run());
-        // motor.stop(); // Stop motor after movement
+    // Measure exposure timing
+    // setScanTime(); // temp removed
+    exposureTime = 200; // temporary hardcode
+
+    // Begin scan
+    scan();
+}
+
+// Move Frame in 16uS
+void filmScanner::moveFrame(long steps) {
+    driver.microsteps(8);
+    motor.setMaxSpeed(30000);
+    motor.setAcceleration(10000);
+    motor.move(steps);
+    while (motor.run());
+    return;
+}
+
+// Read poti and define 135 or 120 based on that
+bool filmScanner::setScanMode() {
+    Serial.println("0=135, 1=120");
+    poti.setMap(0,1.999);
+    buttonA.read();
+    delay(100);
+    while (!buttonA.isPressed) {
+        poti.read();
         buttonA.read();
-        long timerStart = millis(); // Reset timer
-        Serial.println("reading...");
-        while (millis() - timerStart < 500 && !buttonA.isPressed) {
+        Serial.println(int(poti.getMap()));
+        delay(100);
+    }
+    return int(poti.getMap());
+}
+
+int filmScanner::setScansPerFrame() {
+    delay(100);
+    buttonA.read();
+    Serial.println("Setting scanCount");
+    int scans = 0;
+    poti.setMap(0,3.9);
+    while (!buttonA.isPressed) {
+        buttonA.read();
+        poti.read();
+        Serial.println(int(poti.getMap()));
+        delay(100);
+    }
+
+    int val = int(poti.getMap());
+    if (val == 0) scans = 1;
+    if (val == 1) scans = 3;
+    if (val == 2) scans = 5;
+    if (val == 3) scans = 7;
+    
+    return scans;
+}
+
+// TODO: add pause/restart mode, or recalibrate mode.
+void filmScanner::scan() {
+    delay(100);
+    Serial.println("move to scan start position");
+    dynamicPosition();
+    delay(100);
+    Serial.println("starting scan");
+    delay(100);
+    buttonA.read();
+    if (scanMode == 0) scan135();
+    if (scanMode == 1) scan120();
+    Serial.println("finished scan");
+}
+
+
+void filmScanner::scan120() {
+    while (true) {
+        buttonA.read();
+        if (buttonA.isPressed) break;
+
+        // Case A
+        if (scanCount == 1) {
+            scanFrame();
+            moveFrame(frameWidth);
+        } else {
+            // Case B (scanCount in {3,5,7}):
+            // Start position: left_sensor == left_frame
+            //
+            // Total scans per exposure = scanCount + 2
+            // Positions (example scanCount=3 => 5 scans):
+            // 1) one step left of left edge
+            // 2) left edge
+            // 3) one step (i.e., +step) from left edge (middle for n=3)
+            // 4) right edge
+            // 5) one step right of right edge
+            //
+            // step is defined by evenly spacing scanCount positions across [0, frameWidth]
+            // so step = frameWidth / (scanCount - 1)
+
+            long step = (frameWidth / (scanCount - 1)) * direction;
+
+            // Scan 1: one left
+            moveFrame(-step);
             buttonA.read();
-            if (buttonA.isPressed) {
-                if (microStepSetting == 16) {
-                    microStepSetting = 1;
-                }
-                else {
-                    microStepSetting = microStepSetting * 2;
-                }
-                driver.microsteps(microStepSetting); // Set microstepping
+            if (buttonA.isPressed) break;
+            scanFrame();
+
+            // Scan 2: back to left edge
+            moveFrame(step);
+            buttonA.read();
+            if (buttonA.isPressed) break;
+            scanFrame();
+
+            // Scans 3..(scanCount+1): step right, scanning each time
+            // This includes the right edge on the last iteration.
+            for (int i = 0; i < (scanCount - 1); i++) {
+                moveFrame(step);
+                buttonA.read();
+                if (buttonA.isPressed) break;
+                scanFrame();
             }
+            if (buttonA.isPressed) break;
+
+            // Final scan (scanCount+2): one right past right edge
+            moveFrame(step);
+            buttonA.read();
+            if (buttonA.isPressed) break;
+            scanFrame();
+
+            // Move to next
+            moveFrame(2*step);
         }
-        direction = direction * -1;
-        Serial.println("Moving...");
+
+        buttonA.read();
+        if (buttonA.isPressed) break;
+
+        dynamicPosition(); // advance to next exposure start
     }
 }
 
-long filmScanner::calibrate() {
-    // Position scanner to frame start
-    dynamicPosition();
+// Continuously scan until A is pressed.
+void filmScanner::scan135() {
+    while (!buttonA.isPressed) {
+        buttonA.read();
+        scanFrame();
+        buttonA.read();
+        moveFrame(frameWidth + gutterWidth);
+        buttonA.read();
+    }
+    return;
+}
+
+// Take photo, press A when photo completed. Additional time added for buffer.
+void filmScanner::setScanTime() {
+    // Wait for user to press A
+    delay(100);
+    buttonA.read();
+    Serial.println("Waiting for shutter timing. press A to start");
+    while (!buttonA.isPressed) {
+        buttonA.read();
+    }
+    delay(1500);
+    // Start a timer and take a photo
+    long t0 = millis();
     takePhoto();
 
-    // Position scanner to next frame (or end of frame)
-    frameWidth = dynamicPosition(); // [steps]
+    // Wait for A to be pressed
+    while (!buttonA.isPressed) {
+        buttonA.read();
+    }
+    long t1 = millis();
+    long dt = t1 - t0;
+    if (dt > 2000) {
+        Serial.print("Retrying. Measured time > 2s: ");
+        Serial.println(dt);
+        setScanTime(); // retry in case user messed up
+    }
+    else {
+        Serial.print("Measured time: ");
+        Serial.println(dt);
+        exposureTime = dt * 1.50;
+    }
 
-    takePhoto();
-
-    // TODO: if medium format (i.e. frameWide > 36mm), use a button to set how many scans to make. Also use dynamicPosition() to set distance to next frame start
-
-    // if frameWidth > 135 --> set as 120 --> set scan count
-    // gutterWidth = dynamicPosition(); // distance from end of frame 0 to start of frame 1[steps] 
-    Serial.println(frameWidth);
-    return frameWidth;
 }

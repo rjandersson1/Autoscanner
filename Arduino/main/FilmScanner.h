@@ -14,21 +14,30 @@ class filmScanner {
 public:
 
     // Constructor
-    filmScanner(AccelStepper &motor, TMC2209Stepper &driver, Button &buttonA, Button &buttonB, toggleButton &buttonC, Poti &poti, IRsend &irLED, int PIN_LED);
+    filmScanner(AccelStepper &motor, TMC2209Stepper &driver, Button &buttonA, Poti &poti, IRsend &irLED, int PIN_LED);
 
     // Reference Objects
     AccelStepper &motor;
     TMC2209Stepper &driver;
     Button &buttonA;
-    Button &buttonB;
-    toggleButton &buttonC;
     Poti &poti;
     IRsend &irLED;
 
 
     // Properties
-    long frameWidth = 0; // [steps]
-    bool scanning;
+    float stepsPerMm = 38.95; 
+    long frameWidth = 0;
+    long frameWidth_135 = 1402; // [steps @ 8uS]
+    long frameWidth_645 = 1616;
+    long frameWidth_66   = 2181;
+    long frameWidth_67   = 2727;
+    long gutterWidth_135 = 78;
+    long gutterWidth = 0;
+    int scanCount = 1;
+    bool scanMode = 0; // 0 = 135, 1 = 120
+    long exposureTime = 0;
+    int direction = 1; // + for right, - for left (looking at motor side)
+
     int PIN_LED; // LED pin for feedback
 
     // default motor parameters
@@ -37,15 +46,18 @@ public:
 
 
     // Methods
-    void moveFrame();
     void setup();
-    long calibrate();
     void takePhoto();
-    void startScan();
-    void stopScan();
-    void dynamicMove();
+    void scanFrame();
     long dynamicPosition();
-    void DEBUG_findMaxVelocity();
+    long calibrate();
+    void moveFrame(long steps);
+    bool setScanMode();
+    int setScansPerFrame();
+    void scan();
+    void setScanTime();
+    void scan135();
+    void scan120();
 
 
 
