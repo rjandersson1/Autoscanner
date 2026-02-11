@@ -35,7 +35,7 @@ public:
     long gutterWidth = 0;
     int scanCount = 1;
     bool scanMode = 0; // 0 = 135, 1 = 120
-    long exposureTime = 0;
+    long exposureTime = 650; // default
     int direction = 1; // + for right, - for left (looking at motor side)
 
     int PIN_LED; // LED pin for feedback

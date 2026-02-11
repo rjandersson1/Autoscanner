@@ -31,8 +31,9 @@ void filmScanner::takePhoto() {
 }
 
 void filmScanner::scanFrame() {
+    delay(exposureTime / 2);
     takePhoto();
-    delay(exposureTime);
+    delay(exposureTime / 2);
 }
 
 // Moves film scanner position based on potentiometer input. When at limits, it ramps up to continuous movement.
@@ -41,7 +42,7 @@ long filmScanner::dynamicPosition() {
     const long MAP_VAL = 800/2; // Max potentiometer value (+/- steps)
     const int MICROSTEP = 8; // Was 8 originally
     const int DELTA_THRESHOLD = 0.005 * MAP_VAL; // Threshold for change in position to trigger movement
-    const long ACCEL_MOVING = 8000; // Acceleration for movement [step/s^2]
+    const long ACCEL_MOVING = 2000; // Acceleration for movement [step/s^2]
     const long SPEED_MOVING = 8000; // Speed for movement [steps/s]
     const long ACCEL_POSITIONING = ACCEL_MOVING * 100;
     const long SPEED_POSITIONING = 8000; // (fine) Speed for positioning [steps/s]
@@ -54,11 +55,11 @@ long filmScanner::dynamicPosition() {
     long stepCount = 0;
     
     // Wait for potentiometer to return to zero (+/- 2)
-    while ((float)abs(poti.getMap()) > (float)(0.01 * MAP_VAL)) {
-        poti.read();
-        delay(10); // Delay to avoid flooding
-    }
-    motor.setCurrentPosition(0); 
+    // while ((float)abs(poti.getMap()) > (float)(0.01 * MAP_VAL)) {
+    //     poti.read();
+    //     delay(10); // Delay to avoid flooding
+    // }
+    // motor.setCurrentPosition(0); 
 
     // Loop
     long prevPotiReading = poti.getMap(); // Previous potentiometer reading
@@ -162,7 +163,7 @@ long filmScanner::calibrate() {
 
     // Measure exposure timing
     // setScanTime(); // temp removed
-    exposureTime = 200; // temporary hardcode
+    // exposureTime = 200; // temporary hardcode
 
     // Begin scan
     scan();
@@ -171,8 +172,8 @@ long filmScanner::calibrate() {
 // Move Frame in 16uS
 void filmScanner::moveFrame(long steps) {
     driver.microsteps(8);
-    motor.setMaxSpeed(30000);
-    motor.setAcceleration(10000);
+    motor.setMaxSpeed(10000);
+    motor.setAcceleration(2000);
     motor.move(steps);
     while (motor.run());
     return;
@@ -198,7 +199,7 @@ int filmScanner::setScansPerFrame() {
     buttonA.read();
     Serial.println("Setting scanCount");
     int scans = 0;
-    poti.setMap(0,3.9);
+    poti.setMap(0,1.99);
     while (!buttonA.isPressed) {
         buttonA.read();
         poti.read();
