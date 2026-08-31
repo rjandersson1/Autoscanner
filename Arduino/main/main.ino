@@ -36,20 +36,20 @@
 // ======================== Pindef ============================= //
 
 // Define input pins
-#define PIN_LED     9
+#define PIN_LED     12
 #define PIN_IR      8
 #define IR_SEND_PIN PIN_IR // Set the IR sending pin to Pin 9
-#define PIN_BTN_A   A3  
-#define PIN_POTI    A6  
+#define PIN_BTN_A   3  
+#define PIN_POTI    A0  
 
 // Define motor driver pins (TMC2209)
 #define PIN_EN     2
-#define PIN_STEP   3
-#define PIN_DIR    4
+#define PIN_STEP   8
+#define PIN_DIR    9
 #define R_SENSE    0.11f
 #define DRIVER_ADDRESS 0b00 // MS1/MS2 set to GND (0b00)
-#define PIN_TMC2209_RX 5 // D5 goes to TMC2209 TX (PDN_UART)
-#define PIN_TMC2209_TX 6 // D6 goes to TMC2209 RX (PDN_UART)
+#define PIN_TMC2209_RX 6 // D5 goes to TMC2209 TX (PDN_UART)
+#define PIN_TMC2209_TX 7 // D6 goes to TMC2209 RX (PDN_UART)
 
 // Legacy buttons (pins are correct, add for future expansion)
 // #define SW_DN       A1

@@ -16,7 +16,7 @@ filmScanner::filmScanner(AccelStepper &motor, TMC2209Stepper &driver, Button &bu
 }
 
 void filmScanner::setup() {
-    poti.initFilter(1); // Initialize filter with window size
+    poti.initFilter(3); // Initialize filter with window size
     calibrate();
 }
 
